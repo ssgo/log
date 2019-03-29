@@ -10,20 +10,20 @@ import (
 	"time"
 )
 
-type LogLevelType int
+type LevelType int
 
-const LogLevelDebug LogLevelType = 1
-const LogLevelInfo LogLevelType = 2
-const LogLevelWarning LogLevelType = 3
-const LogLevelError LogLevelType = 4
+const DEBUG LevelType = 1
+const INFO LevelType = 2
+const WARNING LevelType = 3
+const ERROR LevelType = 4
 
 type Logger struct {
-	level  LogLevelType
+	level       LevelType
 	truncations []string
-	writer func(string)
+	writer      func(string)
 }
 
-func (logger *Logger) SetLevel(level LogLevelType) {
+func (logger *Logger) SetLevel(level LevelType) {
 	logger.level = level
 }
 
@@ -36,25 +36,25 @@ func (logger *Logger) SetTruncations(truncations ...string) {
 }
 
 func (logger *Logger) Debug(logType string, data ...interface{}) {
-	logger.log(LogLevelDebug, logType, buildLogData(data...))
+	logger.log(DEBUG, logType, buildLogData(data...))
 }
 
 func (logger *Logger) Info(logType string, data ...interface{}) {
-	logger.log(LogLevelInfo, logType, buildLogData(data...))
+	logger.log(INFO, logType, buildLogData(data...))
 }
 
 func (logger *Logger) Warning(logType string, data ...interface{}) {
-	logger.trace(LogLevelWarning, logType, buildLogData(data...))
+	logger.trace(WARNING, logType, buildLogData(data...))
 }
 
 func (logger *Logger) Error(logType string, data ...interface{}) {
-	logger.trace(LogLevelError, logType, buildLogData(data...))
+	logger.trace(ERROR, logType, buildLogData(data...))
 }
 
-func (logger *Logger) log(LogLevel LogLevelType, logType string, data map[string]interface{}) {
+func (logger *Logger) log(LogLevel LevelType, logType string, data map[string]interface{}) {
 	settedLevel := logger.level
 	if settedLevel == 0 {
-		settedLevel = LogLevelInfo
+		settedLevel = INFO
 	}
 	if LogLevel < settedLevel {
 		return
@@ -62,13 +62,13 @@ func (logger *Logger) log(LogLevel LogLevelType, logType string, data map[string
 
 	LogLevelName := standard.LogLevelInfo
 	switch LogLevel {
-	case LogLevelDebug:
+	case DEBUG:
 		LogLevelName = standard.LogLevelDebug
-	case LogLevelInfo:
+	case INFO:
 		LogLevelName = standard.LogLevelInfo
-	case LogLevelWarning:
+	case WARNING:
 		LogLevelName = standard.LogLevelWarning
-	case LogLevelError:
+	case ERROR:
 		LogLevelName = standard.LogLevelError
 	}
 
@@ -97,7 +97,7 @@ func (logger *Logger) log(LogLevel LogLevelType, logType string, data map[string
 	}
 }
 
-func (logger *Logger) trace(LogLevel LogLevelType, logType string, data map[string]interface{}) {
+func (logger *Logger) trace(LogLevel LevelType, logType string, data map[string]interface{}) {
 	traces := make([]string, 0)
 	for i := 1; i < 20; i++ {
 		_, file, line, ok := runtime.Caller(i)
@@ -157,5 +157,5 @@ func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientI
 	extraInfo[standard.LogFieldRequestResponseHeaders] = responseHeaders
 	extraInfo[standard.LogFieldRequestOutLen] = responseDataLength
 	extraInfo[standard.LogFieldRequestResult] = responseData
-	logger.log(LogLevelInfo, standard.LogTypeRequest, extraInfo)
+	logger.log(INFO, standard.LogTypeRequest, extraInfo)
 }
