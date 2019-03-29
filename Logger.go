@@ -107,6 +107,9 @@ func (logger *Logger) trace(LogLevel LevelType, logType string, data map[string]
 		if strings.Contains(file, "/go/src/") {
 			continue
 		}
+		if strings.Contains(file, "/ssgo/log") {
+			continue
+		}
 		if logger.truncations != nil {
 			for _, truncation := range logger.truncations {
 				pos := strings.Index(file, truncation)

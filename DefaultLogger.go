@@ -2,6 +2,10 @@ package log
 
 var defaultLogger = Logger{}
 
+func init() {
+	defaultLogger.SetTruncations("/ssgo/")
+}
+
 func SetLevel(level LevelType) {
 	defaultLogger.SetLevel(level)
 }
