@@ -140,6 +140,9 @@ func buildLogData(args ...interface{}) map[string]interface{} {
 }
 
 func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}){
+	if extraInfo == nil {
+		extraInfo = map[string]interface{}{}
+	}
 	extraInfo[standard.LogFieldRequestApp] = app
 	extraInfo[standard.LogFieldRequestNode] = node
 	extraInfo[standard.LogFieldRequestClientIp] = clientIp
