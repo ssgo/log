@@ -62,7 +62,7 @@ func ParseBadLog(line string) *BaseLog {
 			baseLog.LogTime = tm
 			line = line[20:]
 		} else {
-			baseLog.LogTime = time.Now()
+			return nil
 		}
 	} else if len(line) > 26 && line[26] == ' ' {
 		tm, err := time.Parse("2006/01/02 15:04:05.000000", line[0:26])
@@ -70,10 +70,10 @@ func ParseBadLog(line string) *BaseLog {
 			baseLog.LogTime = tm
 			line = line[27:]
 		} else {
-			baseLog.LogTime = time.Now()
+			return nil
 		}
 	} else {
-		baseLog.LogTime = time.Now()
+		return nil
 	}
 	baseLog.Extra["info"] = line
 	return &baseLog
