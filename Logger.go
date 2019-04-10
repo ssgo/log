@@ -51,17 +51,17 @@ func (logger *Logger) Error(logType string, data ...interface{}) {
 	logger.trace(ERROR, logType, buildLogData(data...))
 }
 
-func (logger *Logger) log(LogLevel LevelType, logType string, data map[string]interface{}) {
+func (logger *Logger) log(logLevel LevelType, logType string, data map[string]interface{}) {
 	settedLevel := logger.level
 	if settedLevel == 0 {
 		settedLevel = INFO
 	}
-	if LogLevel < settedLevel {
+	if logLevel < settedLevel {
 		return
 	}
 
 	LogLevelName := standard.LogLevelInfo
-	switch LogLevel {
+	switch logLevel {
 	case DEBUG:
 		LogLevelName = standard.LogLevelDebug
 	case INFO:
@@ -73,17 +73,17 @@ func (logger *Logger) log(LogLevel LevelType, logType string, data map[string]in
 	}
 
 	data[standard.LogFieldLevel] = LogLevelName
-	data[standard.LogFieldTime] = standard.MakeLogTime(time.Now())
+	data[standard.LogFieldTime] = MakeLogTime(time.Now())
 	data[standard.LogFieldType] = logType
 	buf, err := json.Marshal(data)
 
 	if err != nil {
-		// 无法序列化的数据包装为 JsonEncodeError
+		// 无法序列化的数据包装为 undefined
 		buf, err = json.Marshal(map[string]interface{}{
 			standard.LogFieldLevel: data[standard.LogFieldLevel],
 			standard.LogFieldTime:  data[standard.LogFieldTime],
-			standard.LogFieldType:  standard.LogTypeEncodingError,
-			"data":                 fmt.Sprint(data),
+			standard.LogFieldType:  standard.LogTypeUndefined,
+			"info":                 fmt.Sprint(data),
 		})
 		return
 	}
