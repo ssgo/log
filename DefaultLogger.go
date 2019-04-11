@@ -3,7 +3,7 @@ package log
 var defaultLogger = Logger{}
 
 func init() {
-	defaultLogger.SetTruncations("/ssgo/")
+	defaultLogger.SetTruncations("github.com/", "/ssgo/")
 }
 
 func SetLevel(level LevelType) {
