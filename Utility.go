@@ -39,7 +39,7 @@ func ParseBaseLog(line string) *BaseLog {
 				case standard.LogFieldTime:
 					t := u.Float64(v)
 					ts := int64(math.Floor(t))
-					tns := int64(t-float64(ts)) * 1e9
+					tns := int64(t-float64(ts) * 1e9)
 					baseLog.LogTime = time.Unix(ts, tns)
 				case standard.LogFieldTraces:
 					baseLog.Traces = u.String(v)
