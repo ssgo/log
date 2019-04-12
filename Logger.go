@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -82,6 +83,7 @@ func (logger *Logger) log(logLevel LevelType, logType string, data map[string]in
 
 	//TODO not support windows, need to deal with path split char :
 	_, fileName, lineNum, _ := runtime.Caller(2)
+	fileName = filepath.Base(fileName)
 	b := strings.Builder{}
 	b.WriteString(fileName)
 	b.WriteString(":")
