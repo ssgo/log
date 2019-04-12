@@ -3,11 +3,13 @@ package log
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ssgo/standard"
 	"log"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ssgo/standard"
 )
 
 type LevelType int
@@ -17,10 +19,16 @@ const INFO LevelType = 2
 const WARNING LevelType = 3
 const ERROR LevelType = 4
 
+var globalLevelType LevelType = INFO
+
 type Logger struct {
 	level       LevelType
 	truncations []string
 	writer      func(string)
+}
+
+func (l *Logger) SetGlobalLevel(level LevelType) {
+	globalLevelType = level
 }
 
 func (logger *Logger) SetLevel(level LevelType) {
@@ -54,7 +62,7 @@ func (logger *Logger) Error(logType string, data ...interface{}) {
 func (logger *Logger) log(logLevel LevelType, logType string, data map[string]interface{}) {
 	settedLevel := logger.level
 	if settedLevel == 0 {
-		settedLevel = INFO
+		settedLevel = globalLevelType
 	}
 	if logLevel < settedLevel {
 		return
@@ -72,6 +80,13 @@ func (logger *Logger) log(logLevel LevelType, logType string, data map[string]in
 		LogLevelName = standard.LogLevelError
 	}
 
+	//TODO not support windows, need to deal with path split char :
+	_, fileName, lineNum, _ := runtime.Caller(2)
+	b := strings.Builder{}
+	b.WriteString(fileName)
+	b.WriteString(":")
+	b.WriteString(strconv.Itoa(lineNum))
+	data[standard.LogFilePath] = b.String()
 	data[standard.LogFieldLevel] = LogLevelName
 	data[standard.LogFieldTime] = MakeLogTime(time.Now())
 	data[standard.LogFieldType] = logType
@@ -80,6 +95,7 @@ func (logger *Logger) log(logLevel LevelType, logType string, data map[string]in
 	if err != nil {
 		// 无法序列化的数据包装为 undefined
 		buf, err = json.Marshal(map[string]interface{}{
+			standard.LogFilePath:   data[standard.LogFilePath],
 			standard.LogFieldLevel: data[standard.LogFieldLevel],
 			standard.LogFieldTime:  data[standard.LogFieldTime],
 			standard.LogFieldType:  standard.LogTypeUndefined,
@@ -131,7 +147,7 @@ func buildLogData(args ...interface{}) map[string]interface{} {
 		}
 	}
 	data := map[string]interface{}{}
-	for i:=1; i<len(args); i+=2 {
+	for i := 1; i < len(args); i += 2 {
 		if k, ok := args[i-1].(string); ok {
 			data[k] = args[i]
 		}
@@ -139,7 +155,8 @@ func buildLogData(args ...interface{}) map[string]interface{} {
 	return data
 }
 
-func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}){
+// Ad: Pass parameters in the form of structure
+func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}) {
 	if extraInfo == nil {
 		extraInfo = map[string]interface{}{}
 	}

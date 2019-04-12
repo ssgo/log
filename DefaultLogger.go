@@ -10,6 +10,10 @@ func SetLevel(level LevelType) {
 	defaultLogger.SetLevel(level)
 }
 
+func SetGloablLevel(level LevelType) {
+	defaultLogger.SetGlobalLevel(level)
+}
+
 func SetWriter(writer func(string)) {
 	defaultLogger.SetWriter(writer)
 }
@@ -34,6 +38,6 @@ func Error(logType string, data ...interface{}) {
 	defaultLogger.Error(logType, data...)
 }
 
-func LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}){
+func LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}) {
 	defaultLogger.LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, authLevel, priority, method, path, requestHeaders, requestData, usedTime, responseCode, responseHeaders, responseDataLength, responseData, extraInfo)
 }
