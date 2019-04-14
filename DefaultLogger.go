@@ -1,6 +1,6 @@
 package log
 
-var defaultLogger = Logger{}
+var defaultLogger = &Logger{}
 
 func init() {
 	defaultLogger.SetTruncations("github.com/", "/ssgo/")
@@ -23,19 +23,19 @@ func SetTruncations(truncations ...string) {
 }
 
 func Debug(logType string, data ...interface{}) {
-	defaultLogger.Debug(logType, data...)
+	output(defaultLogger, DEBUG, logType, buildLogData(data...))
 }
 
 func Info(logType string, data ...interface{}) {
-	defaultLogger.Info(logType, data...)
+	output(defaultLogger, INFO, logType, buildLogData(data...))
 }
 
 func Warning(logType string, data ...interface{}) {
-	defaultLogger.Warning(logType, data...)
+	output(defaultLogger, WARNING, logType, buildLogData(data...))
 }
 
 func Error(logType string, data ...interface{}) {
-	defaultLogger.Error(logType, data...)
+	output(defaultLogger, ERROR, logType, buildLogData(data...))
 }
 
 func LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}) {

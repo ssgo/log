@@ -45,11 +45,11 @@ func (logger *Logger) SetTruncations(truncations ...string) {
 }
 
 func (logger *Logger) Debug(logType string, data ...interface{}) {
-	logger.log(DEBUG, logType, buildLogData(data...))
+	output(logger, DEBUG, logType, buildLogData(data...))
 }
 
 func (logger *Logger) Info(logType string, data ...interface{}) {
-	logger.log(INFO, logType, buildLogData(data...))
+	output(logger, INFO, logType, buildLogData(data...))
 }
 
 func (logger *Logger) Warning(logType string, data ...interface{}) {
@@ -61,6 +61,10 @@ func (logger *Logger) Error(logType string, data ...interface{}) {
 }
 
 func (logger *Logger) log(logLevel LevelType, logType string, data map[string]interface{}) {
+	output(logger, logLevel, logType, data)
+}
+
+func output(logger *Logger, logLevel LevelType, logType string, data map[string]interface{}) {
 	settedLevel := logger.level
 	if settedLevel == 0 {
 		settedLevel = globalLevelType
@@ -81,7 +85,6 @@ func (logger *Logger) log(logLevel LevelType, logType string, data map[string]in
 		LogLevelName = standard.LogLevelError
 	}
 
-	//TODO not support windows, need to deal with path split char :
 	_, fileName, lineNum, _ := runtime.Caller(2)
 	fileName = filepath.Base(fileName)
 	b := strings.Builder{}
@@ -139,7 +142,7 @@ func (logger *Logger) trace(LogLevel LevelType, logType string, data map[string]
 		traces = append(traces, fmt.Sprintf("%s:%d", file, line))
 	}
 	data[standard.LogFieldTraces] = strings.Join(traces, "; ")
-	logger.log(LogLevel, logType, data)
+	output(logger, LogLevel, logType, data)
 }
 
 func buildLogData(args ...interface{}) map[string]interface{} {
