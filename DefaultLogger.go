@@ -38,6 +38,7 @@ func Error(logType string, data ...interface{}) {
 	output(defaultLogger, ERROR, logType, buildLogData(data...))
 }
 
-func LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}) {
-	defaultLogger.LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, authLevel, priority, method, path, requestHeaders, requestData, usedTime, responseCode, responseHeaders, responseDataLength, responseData, extraInfo)
+func LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}) {
+	defaultLogger.LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto, authLevel, priority, method, path, requestHeaders, requestData, usedTime, responseCode, responseHeaders, responseDataLength, responseData, extraInfo)
+
 }

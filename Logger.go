@@ -13,6 +13,8 @@ import (
 	"github.com/ssgo/standard"
 )
 
+const LogFilePath = "file" //日志输出位置 文件:行号
+
 type LevelType int
 
 const DEBUG LevelType = 1
@@ -91,7 +93,7 @@ func output(logger *Logger, logLevel LevelType, logType string, data map[string]
 	b.WriteString(fileName)
 	b.WriteString(":")
 	b.WriteString(strconv.Itoa(lineNum))
-	data[standard.LogFilePath] = b.String()
+	data[LogFilePath] = b.String()
 	data[standard.LogFieldLevel] = LogLevelName
 	data[standard.LogFieldTime] = MakeLogTime(time.Now())
 	data[standard.LogFieldType] = logType
@@ -100,7 +102,7 @@ func output(logger *Logger, logLevel LevelType, logType string, data map[string]
 	if err != nil {
 		// 无法序列化的数据包装为 undefined
 		buf, err = json.Marshal(map[string]interface{}{
-			standard.LogFilePath:   data[standard.LogFilePath],
+			LogFilePath:            data[LogFilePath],
 			standard.LogFieldLevel: data[standard.LogFieldLevel],
 			standard.LogFieldTime:  data[standard.LogFieldTime],
 			standard.LogFieldType:  standard.LogTypeUndefined,
@@ -160,8 +162,7 @@ func buildLogData(args ...interface{}) map[string]interface{} {
 	return data
 }
 
-// Ad: Pass parameters in the form of structure
-func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}) {
+func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}) {
 	if extraInfo == nil {
 		extraInfo = map[string]interface{}{}
 	}
@@ -174,6 +175,8 @@ func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientI
 	extraInfo[standard.LogFieldRequestSessionId] = sessionId
 	extraInfo[standard.LogFieldRequestRequestId] = requestId
 	extraInfo[standard.LogFieldRequestHost] = host
+	extraInfo[standard.LogFieldRequestScheme] = scheme
+	extraInfo[standard.LogFieldRequestProto] = proto
 	extraInfo[standard.LogFieldRequestAuthLevel] = authLevel
 	extraInfo[standard.LogFieldRequestPriority] = priority
 	extraInfo[standard.LogFieldRequestMethod] = method
@@ -186,4 +189,5 @@ func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientI
 	extraInfo[standard.LogFieldRequestOutLen] = responseDataLength
 	extraInfo[standard.LogFieldRequestResult] = responseData
 	logger.log(INFO, standard.LogTypeRequest, extraInfo)
+
 }
