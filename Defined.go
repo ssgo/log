@@ -21,6 +21,8 @@ type RequestLog struct {
 	SessionId          string
 	RequestId          string
 	Host               string
+	Scheme             string
+	Proto              string
 	AuthLevel          int
 	Priority           int
 	Method             string
