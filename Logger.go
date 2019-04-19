@@ -36,7 +36,7 @@ func (logger *Logger) SetTruncations(truncations ...string) {
 }
 
 func (logger *Logger) Debug(logType string, data ...interface{}) {
-	logger.log(DEBUG, logType, buildLogData(data...))
+	logger.trace(DEBUG, logType, buildLogData(data...))
 }
 
 func (logger *Logger) Info(logType string, data ...interface{}) {
@@ -131,7 +131,7 @@ func buildLogData(args ...interface{}) map[string]interface{} {
 		}
 	}
 	data := map[string]interface{}{}
-	for i:=1; i<len(args); i+=2 {
+	for i := 1; i < len(args); i += 2 {
 		if k, ok := args[i-1].(string); ok {
 			data[k] = args[i]
 		}
@@ -139,7 +139,7 @@ func buildLogData(args ...interface{}) map[string]interface{} {
 	return data
 }
 
-func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}){
+func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}) {
 	if extraInfo == nil {
 		extraInfo = map[string]interface{}{}
 	}
