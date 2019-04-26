@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ssgo/standard"
+	"github.com/ssgo/u"
 	"log"
 	"runtime"
 	"strings"
@@ -20,7 +21,14 @@ const ERROR LevelType = 4
 type Logger struct {
 	level       LevelType
 	truncations []string
+	traceId     string
 	writer      func(string)
+}
+
+func (logger *Logger) New(traceId string) Logger {
+	newLogger := *logger
+	newLogger.traceId = traceId
+	return newLogger
 }
 
 func (logger *Logger) SetLevel(level LevelType) {
@@ -35,60 +43,30 @@ func (logger *Logger) SetTruncations(truncations ...string) {
 	logger.truncations = append(logger.truncations, truncations...)
 }
 
-func (logger *Logger) Debug(logType string, data ...interface{}) {
-	logger.trace(DEBUG, logType, buildLogData(data...))
-}
-
-func (logger *Logger) Info(logType string, data ...interface{}) {
-	logger.log(INFO, logType, buildLogData(data...))
-}
-
-func (logger *Logger) Warning(logType string, data ...interface{}) {
-	logger.trace(WARNING, logType, buildLogData(data...))
-}
-
-func (logger *Logger) Error(logType string, data ...interface{}) {
-	logger.trace(ERROR, logType, buildLogData(data...))
-}
-
-func (logger *Logger) log(logLevel LevelType, logType string, data map[string]interface{}) {
+func (logger *Logger) checkLevel(logLevel LevelType) bool {
 	settedLevel := logger.level
 	if settedLevel == 0 {
 		settedLevel = INFO
 	}
-	if logLevel < settedLevel {
-		return
-	}
+	return logLevel >= settedLevel
+}
 
-	LogLevelName := standard.LogLevelInfo
-	switch logLevel {
-	case DEBUG:
-		LogLevelName = standard.LogLevelDebug
-	case INFO:
-		LogLevelName = standard.LogLevelInfo
-	case WARNING:
-		LogLevelName = standard.LogLevelWarning
-	case ERROR:
-		LogLevelName = standard.LogLevelError
-	}
+func (logger *Logger) log(data interface{}) {
 
-	data[standard.LogFieldLevel] = LogLevelName
-	data[standard.LogFieldTime] = MakeLogTime(time.Now())
-	data[standard.LogFieldType] = logType
 	buf, err := json.Marshal(data)
 
 	if err != nil {
 		// 无法序列化的数据包装为 undefined
 		buf, err = json.Marshal(map[string]interface{}{
-			standard.LogFieldLevel: data[standard.LogFieldLevel],
-			standard.LogFieldTime:  data[standard.LogFieldTime],
-			standard.LogFieldType:  standard.LogTypeUndefined,
-			"info":                 fmt.Sprint(data),
+			"logTime":   MakeLogTime(time.Now()),
+			"logType":   standard.LogTypeUndefined,
+			"traceId":   logger.traceId,
+			"undefined": fmt.Sprint(data),
 		})
-		return
 	}
 
 	if err == nil {
+		u.FixUpperCase(buf)
 		if logger.writer == nil {
 			log.Print(string(buf))
 		} else {
@@ -97,8 +75,8 @@ func (logger *Logger) log(logLevel LevelType, logType string, data map[string]in
 	}
 }
 
-func (logger *Logger) trace(LogLevel LevelType, logType string, data map[string]interface{}) {
-	traces := make([]string, 0)
+func (logger *Logger) getCallStacks() []string {
+	callStacks := make([]string, 0)
 	for i := 1; i < 20; i++ {
 		_, file, line, ok := runtime.Caller(i)
 		if !ok {
@@ -118,52 +96,30 @@ func (logger *Logger) trace(LogLevel LevelType, logType string, data map[string]
 				}
 			}
 		}
-		traces = append(traces, fmt.Sprintf("%s:%d", file, line))
+		callStacks = append(callStacks, fmt.Sprintf("%s:%d", file, line))
 	}
-	data[standard.LogFieldTraces] = strings.Join(traces, "; ")
-	logger.log(LogLevel, logType, data)
+	return callStacks
 }
 
-func buildLogData(args ...interface{}) map[string]interface{} {
-	if len(args) == 1 {
-		if mapData, ok := args[0].(map[string]interface{}); ok {
-			return mapData
+func (logger *Logger) getBaseLog(logType string, extra ...interface{}) standard.BaseLog {
+	baseLog := standard.BaseLog{
+		LogTime: MakeLogTime(time.Now()),
+		LogType: logType,
+		TraceId: logger.traceId,
+	}
+	if len(extra) == 1 {
+		if mapData, ok := extra[0].(map[string]interface{}); ok {
+			baseLog.Extra = mapData
+			return baseLog
 		}
 	}
-	data := map[string]interface{}{}
-	for i := 1; i < len(args); i += 2 {
-		if k, ok := args[i-1].(string); ok {
-			data[k] = args[i]
+	if len(extra) > 1 {
+		baseLog.Extra = map[string]interface{}{}
+		for i := 1; i < len(extra); i += 2 {
+			if k, ok := extra[i-1].(string); ok {
+				baseLog.Extra[k] = extra[i]
+			}
 		}
 	}
-	return data
-}
-
-func (logger *Logger) LogRequest(app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extraInfo map[string]interface{}) {
-	if extraInfo == nil {
-		extraInfo = map[string]interface{}{}
-	}
-	extraInfo[standard.LogFieldRequestApp] = app
-	extraInfo[standard.LogFieldRequestNode] = node
-	extraInfo[standard.LogFieldRequestClientIp] = clientIp
-	extraInfo[standard.LogFieldRequestFromApp] = fromApp
-	extraInfo[standard.LogFieldRequestFromNode] = fromNode
-	extraInfo[standard.LogFieldRequestClientId] = clientId
-	extraInfo[standard.LogFieldRequestSessionId] = sessionId
-	extraInfo[standard.LogFieldRequestRequestId] = requestId
-	extraInfo[standard.LogFieldRequestHost] = host
-	extraInfo[standard.LogFieldRequestScheme] = scheme
-	extraInfo[standard.LogFieldRequestProto] = proto
-	extraInfo[standard.LogFieldRequestAuthLevel] = authLevel
-	extraInfo[standard.LogFieldRequestPriority] = priority
-	extraInfo[standard.LogFieldRequestMethod] = method
-	extraInfo[standard.LogFieldRequestPath] = path
-	extraInfo[standard.LogFieldRequestRequestHeaders] = requestHeaders
-	extraInfo[standard.LogFieldRequestArgs] = requestData
-	extraInfo[standard.LogFieldRequestUsedTime] = usedTime
-	extraInfo[standard.LogFieldRequestStatus] = responseCode
-	extraInfo[standard.LogFieldRequestResponseHeaders] = responseHeaders
-	extraInfo[standard.LogFieldRequestOutLen] = responseDataLength
-	extraInfo[standard.LogFieldRequestResult] = responseData
-	logger.log(INFO, standard.LogTypeRequest, extraInfo)
+	return baseLog
 }
