@@ -9,8 +9,7 @@ import (
 )
 
 func TestLogLevel(t *testing.T) {
-	var logger = log.Logger{}
-	logger = logger.New("abcd")
+	var logger = log.New("abcd")
 	var logBuf = []string{}
 	logger.SetWriter(func(data string) {
 		fmt.Println(data)

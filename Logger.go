@@ -25,10 +25,10 @@ type Logger struct {
 	writer      func(string)
 }
 
-func (logger *Logger) New(traceId string) Logger {
+func (logger *Logger) New(traceId string) *Logger {
 	newLogger := *logger
 	newLogger.traceId = traceId
-	return newLogger
+	return &newLogger
 }
 
 func (logger *Logger) SetLevel(level LevelType) {
