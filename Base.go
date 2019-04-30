@@ -1,6 +1,9 @@
 package log
 
-import "github.com/ssgo/standard"
+import (
+	"github.com/ssgo/standard"
+	"time"
+)
 
 func (logger *Logger) Debug(debug string, extra ...interface{}) {
 	if !logger.checkLevel(DEBUG) {
@@ -28,8 +31,8 @@ func (logger *Logger) Warning(warning string, extra ...interface{}) {
 		return
 	}
 	logger.log(standard.WarningLog{
-		BaseLog:   logger.getBaseLog(standard.LogTypeWarning, extra...),
-		Warning:   warning,
+		BaseLog: logger.getBaseLog(standard.LogTypeWarning, extra...),
+		Warning: warning,
 	})
 }
 
@@ -42,4 +45,48 @@ func (logger *Logger) Error(error string, extra ...interface{}) {
 		CallStacks: logger.getCallStacks(),
 		Error:      error,
 	})
+}
+
+func (logger *Logger) getInfoLog(logType, info string, extra ...interface{}) standard.InfoLog {
+	return standard.InfoLog{
+		BaseLog: logger.getBaseLog(logType, extra...),
+		Info:    info,
+	}
+}
+
+func (logger *Logger) getWarningLog(logType, warning string, extra ...interface{}) standard.WarningLog {
+	return standard.WarningLog{
+		BaseLog: logger.getBaseLog(logType, extra...),
+		Warning: warning,
+	}
+}
+
+func (logger *Logger) getErrorLog(logType, error string, extra ...interface{}) standard.ErrorLog {
+	return standard.ErrorLog{
+		BaseLog: logger.getBaseLog(logType, extra...),
+		Error:   error,
+	}
+}
+
+func (logger *Logger) getBaseLog(logType string, extra ...interface{}) standard.BaseLog {
+	baseLog := standard.BaseLog{
+		LogTime: MakeLogTime(time.Now()),
+		LogType: logType,
+		TraceId: logger.traceId,
+	}
+	if len(extra) == 1 {
+		if mapData, ok := extra[0].(map[string]interface{}); ok {
+			baseLog.Extra = mapData
+			return baseLog
+		}
+	}
+	if len(extra) > 1 {
+		baseLog.Extra = map[string]interface{}{}
+		for i := 1; i < len(extra); i += 2 {
+			if k, ok := extra[i-1].(string); ok {
+				baseLog.Extra[k] = extra[i]
+			}
+		}
+	}
+	return baseLog
 }

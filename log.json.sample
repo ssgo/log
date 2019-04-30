@@ -1,0 +1,9 @@
+{
+	"log": {
+		"level": "info",
+		"truncations": ["github.com/", "/ssgo/"],
+		"sensitive": ["password", "secure", "token", "accessToken"],
+		"regexSensitive": ["(^|[^\\d])(1\\d{10})([^\\d]|$)", "\\[(\\w+)\\]"]
+		"sensitiveRule": ["11:3*3", "7:2*2", "3:1*1", "2:1*0"]
+	}
+}
