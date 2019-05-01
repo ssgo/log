@@ -32,6 +32,7 @@ func (logger *Logger) Warning(warning string, extra ...interface{}) {
 	}
 	logger.log(standard.WarningLog{
 		BaseLog: logger.getBaseLog(standard.LogTypeWarning, extra...),
+		CallStacks: logger.getCallStacks(),
 		Warning: warning,
 	})
 }

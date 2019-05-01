@@ -2,6 +2,7 @@ package log_test
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/ssgo/log"
 	"github.com/ssgo/u"
 	log2 "log"
@@ -105,9 +106,15 @@ func TestLogRequest(t *testing.T) {
 
 	startTime := time.Now()
 	time.Sleep(100 * time.Nanosecond)
-	logger.Request("server1", "appA", "10.3.22.178:32421", "59.32.113.241", "appB", "10.3.22.171:12334", "HJDWAdaukhASd7", "8suAHDgsyakHU", "udaHdhagy31Dd", "abc.com", "http", "1.1", 1, 2, "POST", "/users/{userId}/events", map[string]string{"Access-Token": "abcdefg"}, map[string]interface{}{"userId": 31123}, log.MakeUesdTime(startTime, time.Now()), 200, map[string]string{"XXX": "abc"}, 3401, map[string]interface{}{"events": nil}, map[string]interface{}{"specialTag": true})
+	logger.Request("server1", "appA", "10.3.22.178:32421", "59.32.113.241", "appB", "10.3.22.171:12334", "HJDWAdaukhASd7", "8suAHDgsyakHU", "udaHdhagy31Dd", "abc.com", "http", "1.1", 1, 0, "POST", "/users/{userId}/events", map[string]string{"Access-Token": "abcdefg"}, map[string]interface{}{"userId": 31123}, log.MakeUesdTime(startTime, time.Now()), 200, map[string]string{"XXX": "abc"}, 3401, map[string]interface{}{"events": nil}, map[string]interface{}{"specialTag": true})
 	output := bufw.String()
-	//fmt.Println(output)
+
+	//o := map[string]interface{}{}
+	//_ = json.Unmarshal([]byte(output[27:]), &o)
+	//o2, _ := json.MarshalIndent(o, "", "  ")
+	//fmt.Println(string(o2))
+	fmt.Println(output)
+
 	if len(output) < 100 {
 		t.Fatal("request len failed")
 	}

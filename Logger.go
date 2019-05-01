@@ -110,10 +110,13 @@ func NewLogger(conf Config) *Logger {
 	if conf.File != "" {
 		fp, err := os.OpenFile(conf.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err == nil {
-			logger.goLogger = log.New(fp, "", 0)
+			logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
 		} else {
+			log.SetFlags(log.Ldate | log.Lmicroseconds)
 			logger.Error(err.Error())
 		}
+	} else {
+		log.SetFlags(log.Ldate | log.Lmicroseconds)
 	}
 
 	return &logger
@@ -137,11 +140,38 @@ func (logger *Logger) checkLevel(logLevel LevelType) bool {
 	return logLevel >= settedLevel
 }
 
-func (logger *Logger) log(data interface{}) {
-	if logger.sensitive != nil {
-		logger.fixLogData("", reflect.ValueOf(data), 0)
+func flat(v reflect.Value, out reflect.Value) {
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		if t.Field(i).Anonymous && t.Field(i).Type.Kind() == reflect.Struct {
+			flat(v.Field(i), out)
+		} else if t.Field(i).Name == "Extra" && t.Field(i).Type.Kind() == reflect.Map {
+			for _, mk := range v.Field(i).MapKeys() {
+				out.SetMapIndex(mk, v.Field(i).MapIndex(mk))
+			}
+		} else {
+			out.SetMapIndex(reflect.ValueOf(t.Field(i).Name), v.Field(i))
+		}
 	}
-	buf, err := json.Marshal(data)
+}
+
+func (logger *Logger) log(data interface{}) {
+
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() == reflect.Struct {
+		out := reflect.ValueOf(map[string]interface{}{})
+		flat(v, out)
+		v = out
+	}
+
+	if logger.sensitive != nil {
+		logger.fixLogData("", v, 0)
+	}
+
+	buf, err := json.Marshal(v.Interface())
 
 	if err != nil {
 		// 无法序列化的数据包装为 undefined
@@ -188,7 +218,6 @@ func (logger *Logger) getCallStacks() []string {
 	}
 	return callStacks
 }
-
 
 func (logger *Logger) isSensitiveField(s string) bool {
 	return logger.sensitive[fixField(s)]
