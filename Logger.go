@@ -47,6 +47,11 @@ type sensitiveRuleInfo struct {
 	rightNum  int
 }
 
+func init() {
+	log.SetOutput(os.Stdout)
+	log.SetFlags(log.Ldate | log.Lmicroseconds)
+}
+
 func NewLogger(conf Config) *Logger {
 	logger := Logger{
 		truncations: conf.Truncations,
@@ -112,13 +117,9 @@ func NewLogger(conf Config) *Logger {
 		if err == nil {
 			logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
 		} else {
-			log.SetFlags(log.Ldate | log.Lmicroseconds)
 			logger.Error(err.Error())
 		}
-	} else {
-		log.SetFlags(log.Ldate | log.Lmicroseconds)
 	}
-
 	return &logger
 }
 
