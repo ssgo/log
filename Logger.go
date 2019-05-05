@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/ssgo/standard"
@@ -133,6 +134,10 @@ func (logger *Logger) New(traceId string) *Logger {
 	return &newLogger
 }
 
+func (logger *Logger) GetTraceId() string {
+	return logger.traceId
+}
+
 func (logger *Logger) checkLevel(logLevel LevelType) bool {
 	settedLevel := logger.level
 	if settedLevel == 0 {
@@ -185,7 +190,11 @@ func (logger *Logger) log(data interface{}) {
 	}
 
 	if err == nil {
-		u.FixUpperCase(buf)
+		if bytes.Index(buf, []byte("Header")) != -1 {
+			u.FixUpperCase(buf, []string{"Header"})
+		} else {
+			u.FixUpperCase(buf, nil)
+		}
 		if logger.goLogger == nil {
 			log.Print(string(buf))
 		} else {
