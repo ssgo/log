@@ -27,25 +27,15 @@ func (logger *Logger) Info(info string, extra ...interface{}) {
 }
 
 func (logger *Logger) Warning(warning string, extra ...interface{}) {
-	if !logger.checkLevel(WARNING) {
-		return
+	if logger.checkLevel(WARNING) {
+		logger.log(logger.getWarningLog(standard.LogTypeWarning, warning, extra...))
 	}
-	logger.log(standard.WarningLog{
-		BaseLog: logger.getBaseLog(standard.LogTypeWarning, extra...),
-		CallStacks: logger.getCallStacks(),
-		Warning: warning,
-	})
 }
 
 func (logger *Logger) Error(error string, extra ...interface{}) {
-	if !logger.checkLevel(ERROR) {
-		return
+	if logger.checkLevel(ERROR) {
+		logger.log(logger.getErrorLog(standard.LogTypeError, error, extra...))
 	}
-	logger.log(standard.ErrorLog{
-		BaseLog:    logger.getBaseLog(standard.LogTypeError, extra...),
-		CallStacks: logger.getCallStacks(),
-		Error:      error,
-	})
 }
 
 func (logger *Logger) getInfoLog(logType, info string, extra ...interface{}) standard.InfoLog {
@@ -58,6 +48,7 @@ func (logger *Logger) getInfoLog(logType, info string, extra ...interface{}) sta
 func (logger *Logger) getWarningLog(logType, warning string, extra ...interface{}) standard.WarningLog {
 	return standard.WarningLog{
 		BaseLog: logger.getBaseLog(logType, extra...),
+		CallStacks: logger.getCallStacks(),
 		Warning: warning,
 	}
 }
@@ -65,6 +56,7 @@ func (logger *Logger) getWarningLog(logType, warning string, extra ...interface{
 func (logger *Logger) getErrorLog(logType, error string, extra ...interface{}) standard.ErrorLog {
 	return standard.ErrorLog{
 		BaseLog: logger.getBaseLog(logType, extra...),
+		CallStacks: logger.getCallStacks(),
 		Error:   error,
 	}
 }

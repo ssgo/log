@@ -205,7 +205,7 @@ func (logger *Logger) log(data interface{}) {
 
 func (logger *Logger) getCallStacks() []string {
 	callStacks := make([]string, 0)
-	for i := 1; i < 20; i++ {
+	for i := 0; i < 50; i++ {
 		_, file, line, ok := runtime.Caller(i)
 		if !ok {
 			break

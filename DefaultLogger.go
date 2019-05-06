@@ -11,7 +11,7 @@ func init() {
 		conf.Level = "info"
 	}
 	if conf.Truncations == nil {
-		conf.Truncations = []string{"github.com/", "/ssgo/"}
+		conf.Truncations = []string{"github.com/", "golang.org/", "/ssgo/"}
 	}
 	if conf.Sensitive == nil {
 		conf.Sensitive = []string{"password", "secure", "token", "accessToken"}
