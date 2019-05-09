@@ -6,62 +6,70 @@ import (
 )
 
 func (logger *Logger) Debug(debug string, extra ...interface{}) {
-	if !logger.checkLevel(DEBUG) {
+	if !logger.CheckLevel(DEBUG) {
 		return
 	}
-	logger.log(standard.DebugLog{
-		BaseLog:    logger.getBaseLog(standard.LogTypeDebug, extra...),
+	logger.Log(standard.DebugLog{
+		BaseLog:    logger.MakeBaseLog(standard.LogTypeDebug, extra...),
 		CallStacks: logger.getCallStacks(),
 		Debug:      debug,
 	})
 }
 
 func (logger *Logger) Info(info string, extra ...interface{}) {
-	if !logger.checkLevel(INFO) {
+	if !logger.CheckLevel(INFO) {
 		return
 	}
-	logger.log(standard.InfoLog{
-		BaseLog: logger.getBaseLog(standard.LogTypeInfo, extra...),
+	logger.Log(standard.InfoLog{
+		BaseLog: logger.MakeBaseLog(standard.LogTypeInfo, extra...),
 		Info:    info,
 	})
 }
 
 func (logger *Logger) Warning(warning string, extra ...interface{}) {
-	if logger.checkLevel(WARNING) {
-		logger.log(logger.getWarningLog(standard.LogTypeWarning, warning, extra...))
+	if logger.CheckLevel(WARNING) {
+		logger.Log(logger.MakeWarningLog(standard.LogTypeWarning, warning, extra...))
 	}
 }
 
 func (logger *Logger) Error(error string, extra ...interface{}) {
-	if logger.checkLevel(ERROR) {
-		logger.log(logger.getErrorLog(standard.LogTypeError, error, extra...))
+	if logger.CheckLevel(ERROR) {
+		logger.Log(logger.MakeErrorLog(standard.LogTypeError, error, extra...))
 	}
 }
 
-func (logger *Logger) getInfoLog(logType, info string, extra ...interface{}) standard.InfoLog {
+func (logger *Logger) MakeDebugLog(logType, debug string, extra ...interface{}) standard.DebugLog {
+	return standard.DebugLog{
+		BaseLog: logger.MakeBaseLog(logType, extra...),
+		CallStacks: logger.getCallStacks(),
+		Debug: debug,
+	}
+}
+
+func (logger *Logger) MakeInfoLog(logType, info string, extra ...interface{}) standard.InfoLog {
 	return standard.InfoLog{
-		BaseLog: logger.getBaseLog(logType, extra...),
+		BaseLog: logger.MakeBaseLog(logType, extra...),
 		Info:    info,
 	}
 }
 
-func (logger *Logger) getWarningLog(logType, warning string, extra ...interface{}) standard.WarningLog {
+func (logger *Logger) MakeWarningLog(logType, warning string, extra ...interface{}) standard.WarningLog {
 	return standard.WarningLog{
-		BaseLog: logger.getBaseLog(logType, extra...),
+		BaseLog: logger.MakeBaseLog(logType, extra...),
 		CallStacks: logger.getCallStacks(),
 		Warning: warning,
 	}
 }
 
-func (logger *Logger) getErrorLog(logType, error string, extra ...interface{}) standard.ErrorLog {
+func (logger *Logger) MakeErrorLog(logType, error string, extra ...interface{}) standard.ErrorLog {
 	return standard.ErrorLog{
-		BaseLog: logger.getBaseLog(logType, extra...),
+		BaseLog: logger.MakeBaseLog(logType, extra...),
 		CallStacks: logger.getCallStacks(),
 		Error:   error,
 	}
 }
 
-func (logger *Logger) getBaseLog(logType string, extra ...interface{}) standard.BaseLog {
+func (logger *Logger) MakeBaseLog(logType string, extra ...interface{}) standard.BaseLog {
 	baseLog := standard.BaseLog{
 		LogTime: MakeLogTime(time.Now()),
 		LogType: logType,

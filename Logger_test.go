@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/ssgo/log"
+	"github.com/ssgo/standard"
 	"github.com/ssgo/u"
 	log2 "log"
 	"os"
@@ -13,7 +14,7 @@ import (
 )
 
 func TestLogInfoLevel(t *testing.T) {
-	logFile := "tmp_test_info_level.log"
+	logFile := "tmp_test_info_level.Log"
 	_ = os.Remove(logFile)
 	logger := log.NewLogger(log.Config{
 		File: logFile,
@@ -36,7 +37,7 @@ func TestLogInfoLevel(t *testing.T) {
 }
 
 func TestLogDebugLevel(t *testing.T) {
-	logFile := "tmp_test_debug_level.log"
+	logFile := "tmp_test_debug_level.Log"
 	_ = os.Remove(logFile)
 	logger := log.NewLogger(log.Config{
 		File:  logFile,
@@ -63,7 +64,7 @@ func TestLogDebugLevel(t *testing.T) {
 }
 
 func TestLogSensitive(t *testing.T) {
-	logFile := "tmp_test_sensitive.log"
+	logFile := "tmp_test_sensitive.Log"
 	_ = os.Remove(logFile)
 	logger := log.NewLogger(log.Config{
 		File:           logFile,
@@ -80,7 +81,7 @@ func TestLogSensitive(t *testing.T) {
 		"phone", "13912345678", "139****5678",
 		"phone", 13912345678, "139****5678",
 		"memo", "hi, [Star]! are you ok?", "hi, [S**r]! are you ok?",
-		"memo", "13912345678 is a phone, the phone is 13912345678 not 13912345677 and not 139123456781, is 13912345678","139****5678 is a phone, the phone is 139****5678 not 139****5677 and not 139123456781, is 139****5678",
+		"memo", "13912345678 is a phone, the phone is 13912345678 not 13912345677 and not 139123456781, is 13912345678", "139****5678 is a phone, the phone is 139****5678 not 139****5677 and not 139123456781, is 139****5678",
 	}
 
 	for i := 2; i < len(tests); i += 3 {
@@ -121,4 +122,37 @@ func TestLogRequest(t *testing.T) {
 	if strings.Index(output, "authLevel") == -1 {
 		t.Error("request test failed")
 	}
+}
+
+func TestLogMultipleInheritance(t *testing.T) {
+	logFile := "tmp_test_db_error.Log"
+	_ = os.Remove(logFile)
+	logger := log.NewLogger(log.Config{File: logFile})
+	logger.Log(standard.DBErrorLog{
+		DBLog:    logger.MakeDBLog("type1", "mysql", "user:****@host:port/db", "", nil, 0),
+		ErrorLog: logger.MakeErrorLog("type2", "error"),
+	})
+
+	lines, _ := u.ReadFile(logFile)
+	if len(lines) != 2 || strings.Index(lines[0], "type1") == -1 {
+		t.Error("multiple inheritance test failed")
+	}
+
+	_ = os.Remove(logFile)
+}
+
+func TestLogMap(t *testing.T) {
+	logFile := "tmp_test_map.Log"
+	_ = os.Remove(logFile)
+	logger := log.NewLogger(log.Config{File: logFile})
+	logger.Log(map[string]interface{}{
+		"logType": "type1",
+	})
+
+	lines, _ := u.ReadFile(logFile)
+	if len(lines) != 2 || strings.Index(lines[0], "type1") == -1 {
+		t.Error("map test failed")
+	}
+
+	_ = os.Remove(logFile)
 }

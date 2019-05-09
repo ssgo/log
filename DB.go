@@ -5,25 +5,25 @@ import (
 )
 
 func (logger *Logger) DB(dbType, dsn, query string, args []interface{}, usedTime float32, extra ...interface{}) {
-	if !logger.checkLevel(INFO) {
+	if !logger.CheckLevel(INFO) {
 		return
 	}
-	logger.log(logger.getDBLog(standard.LogTypeDb, dbType, dsn, query, args, usedTime, extra...))
+	logger.Log(logger.MakeDBLog(standard.LogTypeDb, dbType, dsn, query, args, usedTime, extra...))
 }
 
 func (logger *Logger) DBError(error, dbType, dsn, query string, args []interface{}, usedTime float32, extra ...interface{}) {
-	if !logger.checkLevel(ERROR) {
+	if !logger.CheckLevel(ERROR) {
 		return
 	}
-	logger.log(standard.DBErrorLog{
-		DBLog:    logger.getDBLog(standard.LogTypeDbError, dbType, dsn, query, args, usedTime, extra...),
-		ErrorLog: standard.ErrorLog{Error: error},
+	logger.Log(standard.DBErrorLog{
+		DBLog:    logger.MakeDBLog(standard.LogTypeDbError, dbType, dsn, query, args, usedTime, extra...),
+		ErrorLog: logger.MakeErrorLog(standard.LogTypeDbError, error),
 	})
 }
 
-func (logger *Logger) getDBLog(logType, dbType, dsn, query string, args []interface{}, usedTime float32, extra ...interface{}) standard.DBLog {
+func (logger *Logger) MakeDBLog(logType, dbType, dsn, query string, args []interface{}, usedTime float32, extra ...interface{}) standard.DBLog {
 	return standard.DBLog{
-		BaseLog:  logger.getBaseLog(logType, extra...),
+		BaseLog:  logger.MakeBaseLog(logType, extra...),
 		DbType:   dbType,
 		Dsn:      dsn,
 		Query:    query,

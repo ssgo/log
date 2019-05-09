@@ -5,12 +5,16 @@ import (
 )
 
 func (logger *Logger) Monitor(name, target, targetInfo, expect, result string, succeed bool, usedTime float32, memo string, extra ...interface{}) {
-	if !logger.checkLevel(INFO) {
+	if !logger.CheckLevel(INFO) {
 		return
 	}
 
-	logger.log(standard.MonitorLog{
-		BaseLog:    logger.getBaseLog(standard.LogTypeMonitor, extra...),
+	logger.Log(logger.MakeMonitorLog(standard.LogTypeMonitor, name, target, targetInfo, expect, result, succeed, usedTime, memo, extra...))
+}
+
+func (logger *Logger) MakeMonitorLog(logType, name, target, targetInfo, expect, result string, succeed bool, usedTime float32, memo string, extra ...interface{}) standard.MonitorLog {
+	return standard.MonitorLog{
+		BaseLog:    logger.MakeBaseLog(logType, extra...),
 		Name:       name,
 		Target:     target,
 		TargetInfo: targetInfo,
@@ -19,5 +23,5 @@ func (logger *Logger) Monitor(name, target, targetInfo, expect, result string, s
 		Succeed:    succeed,
 		UsedTime:   usedTime,
 		Memo:       memo,
-	})
+	}
 }

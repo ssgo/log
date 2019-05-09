@@ -6,7 +6,7 @@ var DefaultLogger *Logger
 
 func init() {
 	conf := Config{}
-	config.LoadConfig("log", &conf)
+	config.LoadConfig("Log", &conf)
 	if conf.Level == "" {
 		conf.Level = "info"
 	}

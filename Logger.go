@@ -138,7 +138,7 @@ func (logger *Logger) GetTraceId() string {
 	return logger.traceId
 }
 
-func (logger *Logger) checkLevel(logLevel LevelType) bool {
+func (logger *Logger) CheckLevel(logLevel LevelType) bool {
 	settedLevel := logger.level
 	if settedLevel == 0 {
 		settedLevel = INFO
@@ -161,7 +161,7 @@ func flat(v reflect.Value, out reflect.Value) {
 	}
 }
 
-func (logger *Logger) log(data interface{}) {
+func (logger *Logger) Log(data interface{}) {
 
 	v := reflect.ValueOf(data)
 	if v.Kind() == reflect.Ptr {
@@ -213,7 +213,7 @@ func (logger *Logger) getCallStacks() []string {
 		if strings.Contains(file, "/go/src/") {
 			continue
 		}
-		if strings.Contains(file, "/ssgo/log") {
+		if strings.Contains(file, "/ssgo/Log") {
 			continue
 		}
 		if logger.truncations != nil {
@@ -233,7 +233,7 @@ func (logger *Logger) isSensitiveField(s string) bool {
 	return logger.sensitive[fixField(s)]
 }
 
-func (logger *Logger) fixLogData(k string, v reflect.Value, level int) (*reflect.Value) {
+func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.Value {
 	if level >= 10 {
 		return nil
 	}
