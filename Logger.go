@@ -213,7 +213,7 @@ func (logger *Logger) getCallStacks() []string {
 		if strings.Contains(file, "/go/src/") {
 			continue
 		}
-		if strings.Contains(file, "/ssgo/Log") {
+		if strings.Contains(file, "/ssgo/log") {
 			continue
 		}
 		if logger.truncations != nil {
