@@ -242,6 +242,14 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 	}
 
 	t := v.Type()
+	if v.Kind() == reflect.Interface {
+		v = v.Elem()
+		if !v.IsValid() {
+			return nil
+		}
+		t = v.Type()
+	}
+
 	if t.Kind() == reflect.Struct {
 		for i := 0; i < v.NumField(); i++ {
 			newValue := logger.fixLogData(t.Field(i).Name, v.Field(i), level+1)
