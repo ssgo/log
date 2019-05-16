@@ -1,6 +1,9 @@
 package log
 
-import "github.com/ssgo/config"
+import (
+	"github.com/ssgo/config"
+	"github.com/ssgo/standard"
+)
 
 var DefaultLogger *Logger
 
@@ -14,7 +17,7 @@ func init() {
 		conf.Truncations = []string{"github.com/", "golang.org/", "/ssgo/"}
 	}
 	if conf.Sensitive == nil {
-		conf.Sensitive = []string{"password", "secure", "token", "accessToken"}
+		conf.Sensitive = standard.LogDefaultSensitive
 	}
 	if conf.RegexSensitive == nil {
 		conf.RegexSensitive = []string{}

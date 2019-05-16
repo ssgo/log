@@ -2,7 +2,6 @@ package log
 
 import (
 	"encoding/json"
-	"github.com/mitchellh/mapstructure"
 	"github.com/ssgo/standard"
 	"github.com/ssgo/u"
 	"math"
@@ -79,11 +78,11 @@ func ParseBadLog(line string) *standard.BaseLog {
 	return &baseLog
 }
 
-func ParseSpecialLog(from *standard.BaseLog, to interface{}) error {
+func ParseSpecialLog(from *standard.BaseLog, to interface{}) {
 	from.Extra["logType"] = from.LogType
 	from.Extra["logTime"] = from.LogTime
 	from.Extra["traceId"] = from.TraceId
-	err := mapstructure.WeakDecode(from.Extra, to)
+	u.Convert(from.Extra, to)
 	delete(from.Extra, "logType")
 	delete(from.Extra, "logTime")
 	delete(from.Extra, "traceId")
@@ -104,5 +103,4 @@ func ParseSpecialLog(from *standard.BaseLog, to interface{}) error {
 			}
 		}
 	}
-	return err
 }
