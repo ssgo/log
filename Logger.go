@@ -36,10 +36,10 @@ type Logger struct {
 type Config struct {
 	Level          string
 	File           string
-	Truncations    []string
-	Sensitive      []string
-	RegexSensitive []string
-	SensitiveRule  []string
+	Truncations    string
+	Sensitive      string
+	RegexSensitive string
+	SensitiveRule  string
 }
 
 type sensitiveRuleInfo struct {
@@ -55,19 +55,21 @@ func init() {
 
 func NewLogger(conf Config) *Logger {
 	logger := Logger{
-		truncations: conf.Truncations,
+		truncations: u.SplitTrim(conf.Truncations, ","),
 	}
 
-	if conf.Sensitive != nil && len(conf.Sensitive) > 0 {
+	if len(conf.Sensitive) > 0 {
 		logger.sensitive = map[string]bool{}
-		for _, v := range conf.Sensitive {
+		ss := u.SplitTrim(conf.Sensitive, ",")
+		for _, v := range ss {
 			logger.sensitive[fixField(v)] = true
 		}
 	}
 
-	if conf.RegexSensitive != nil && len(conf.RegexSensitive) > 0 {
+	if len(conf.RegexSensitive) > 0 {
 		logger.regexSensitive = make([]*regexp.Regexp, 0)
-		for _, v := range conf.RegexSensitive {
+		ss := u.SplitTrim(conf.RegexSensitive, ",")
+		for _, v := range ss {
 			r, err := regexp.Compile(v)
 			if err == nil {
 				logger.regexSensitive = append(logger.regexSensitive, r)
@@ -80,9 +82,10 @@ func NewLogger(conf Config) *Logger {
 		}
 	}
 
-	if conf.SensitiveRule != nil && len(conf.SensitiveRule) > 0 {
+	if len(conf.SensitiveRule) > 0 {
 		logger.sensitiveRule = make([]sensitiveRuleInfo, 0)
-		for _, v := range conf.SensitiveRule {
+		ss := u.SplitTrim(conf.SensitiveRule, ",")
+		for _, v := range ss {
 			a1 := strings.SplitN(v, ":", 2)
 			if len(a1) == 2 {
 				a2 := strings.SplitN(a1[1], "*", 3)

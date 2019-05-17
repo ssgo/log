@@ -13,17 +13,14 @@ func init() {
 	if conf.Level == "" {
 		conf.Level = "info"
 	}
-	if conf.Truncations == nil {
-		conf.Truncations = []string{"github.com/", "golang.org/", "/ssgo/"}
+	if conf.Truncations == "" {
+		conf.Truncations = "github.com/, golang.org/, /ssgo/"
 	}
-	if conf.Sensitive == nil {
+	if conf.Sensitive == "" {
 		conf.Sensitive = standard.LogDefaultSensitive
 	}
-	if conf.RegexSensitive == nil {
-		conf.RegexSensitive = []string{}
-	}
-	if conf.SensitiveRule == nil {
-		conf.SensitiveRule = []string{"12:4*4", "11:3*4", "7:2*2", "3:1*1", "2:1*0"}
+	if conf.SensitiveRule == "" {
+		conf.SensitiveRule = "12:4*4, 11:3*4, 7:2*2, 3:1*1, 2:1*0"
 	}
 
 	DefaultLogger = NewLogger(conf)
