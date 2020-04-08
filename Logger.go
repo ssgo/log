@@ -243,6 +243,12 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 	for v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
+	if v.Kind() == reflect.Ptr && v.IsNil() {
+		return nil
+	}
+	if !v.IsValid() {
+		return nil
+	}
 
 	t := v.Type()
 	if v.Kind() == reflect.Interface {
@@ -254,11 +260,29 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 	}
 
 	if t.Kind() == reflect.Struct {
+		var newValue *reflect.Value = nil
+		if !v.CanSet() {
+			v2 := reflect.New(v.Type()).Elem()
+			newValue = &v2
+			for i := 0; i < v.NumField(); i++ {
+				if v2.Field(i).CanSet() {
+					v2.Field(i).Set(v.Field(i))
+				}
+			}
+			v = v2
+		}
+		changed := false
 		for i := 0; i < v.NumField(); i++ {
 			newValue := logger.fixLogData(t.Field(i).Name, v.Field(i), level+1)
-			if newValue != nil {
+			if newValue != nil {// && v.Field(i).CanSet()
+				changed = true
 				v.Field(i).Set(*newValue)
 			}
+		}
+		if changed {
+			return newValue
+		}else{
+			return nil
 		}
 	} else if t.Kind() == reflect.Map {
 		for _, mk := range v.MapKeys() {
@@ -270,7 +294,7 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 	} else if t.Kind() == reflect.Slice {
 		for i := 0; i < v.Len(); i++ {
 			newValue := logger.fixLogData("", v.Index(i), level+1)
-			if newValue != nil {
+			if newValue != nil && v.Index(i).CanSet() {
 				v.Index(i).Set(*newValue)
 			}
 		}

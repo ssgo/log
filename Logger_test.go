@@ -25,7 +25,7 @@ func TestLogInfoLevel(t *testing.T) {
 	logger.Info("Test", "level", 2)
 	logger.Warning("Test", "level", 3)
 	logger.Error("Test", "level", 4)
-	lines, _ := u.ReadFile(logFile)
+	lines, _ := u.ReadFileLines(logFile)
 	if len(lines) != 4 || strings.Index(lines[0], "info") == -1 {
 		t.Error("info level test failed")
 	}
@@ -49,7 +49,7 @@ func TestLogDebugLevel(t *testing.T) {
 	logger.Info("Test", "level", 2)
 	logger.Warning("Test", "level", 3)
 	logger.Error("Test", "level", 4)
-	lines, _ := u.ReadFile(logFile)
+	lines, _ := u.ReadFileLines(logFile)
 	if len(lines) != 5 || strings.Index(lines[0], "debug") == -1 {
 		t.Error("info level test failed")
 	}
@@ -89,7 +89,7 @@ func TestLogSensitive(t *testing.T) {
 	for i := 2; i < len(tests); i += 3 {
 		logger.Info("Sensitive Test "+u.String(tests[i-2]), tests[i-2], tests[i-1])
 	}
-	lines, _ := u.ReadFile(logFile)
+	lines, _ := u.ReadFileLines(logFile)
 
 	lineIndex := 0
 	for i := 2; i < len(tests); i += 3 {
@@ -116,7 +116,7 @@ func TestLogSensitive2(t *testing.T) {
 	m := map[string]interface{}{}
 	_ = json.Unmarshal([]byte(s), &m)
 	logger.Log(m)
-	lines, _ := u.ReadFile(logFile)
+	lines, _ := u.ReadFileLines(logFile)
 
 	if len(lines) != 2 || strings.Index(lines[0], "isBu*********nXXX") == -1 || strings.Index(lines[0], "isRe**********nXXX") == -1 {
 		t.Error("sensitive2 test failed", lines[0])
@@ -158,7 +158,7 @@ func TestLogMultipleInheritance(t *testing.T) {
 		ErrorLog: logger.MakeErrorLog("type2", "error"),
 	})
 
-	lines, _ := u.ReadFile(logFile)
+	lines, _ := u.ReadFileLines(logFile)
 	if len(lines) != 2 || strings.Index(lines[0], "type1") == -1 {
 		t.Error("multiple inheritance test failed")
 	}
@@ -174,7 +174,7 @@ func TestLogMap(t *testing.T) {
 		"logType": "type1",
 	})
 
-	lines, _ := u.ReadFile(logFile)
+	lines, _ := u.ReadFileLines(logFile)
 	if len(lines) != 2 || strings.Index(lines[0], "type1") == -1 {
 		t.Error("map test failed")
 	}
