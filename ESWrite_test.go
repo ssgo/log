@@ -17,4 +17,11 @@ func TestES(t *testing.T) {
 	logger.Error("Test", "level", 4)
 	log.Stop()
 	log.Wait()
+
+	//imageName := "dev.xue.fun:5000/ssgo/deploy:0.1.1#33"
+	//a := strings.Split(imageName, "/")
+	//imageName = a[len(a)-1]
+	//imageName = strings.SplitN(imageName, ":", 2)[0]
+	//imageName = strings.SplitN(imageName, "#", 2)[0]
+	//fmt.Println(" ^^^", imageName)
 }

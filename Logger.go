@@ -104,7 +104,12 @@ func NewLogger(conf Config) *Logger {
 			conf.Name = os.Getenv("discover_app")
 			if conf.Name == "" {
 				// 尝试读取 $DOCKER_IMAGE_NAME
-				conf.Name = os.Getenv("DOCKER_IMAGE_NAME")
+				imageName := os.Getenv("DOCKER_IMAGE_NAME")
+				a := strings.Split(imageName, "/")
+				imageName = a[len(a)-1]
+				imageName = strings.SplitN(imageName, ":", 2)[0]
+				imageName = strings.SplitN(imageName, "#", 2)[0]
+				conf.Name = imageName
 				if conf.Name == "" {
 					// 尝试读取进程名字
 					conf.Name = path.Base(os.Args[0])
