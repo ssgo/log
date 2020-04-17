@@ -2,27 +2,16 @@ package log
 
 import (
 	"github.com/ssgo/config"
-	"github.com/ssgo/standard"
 )
 
 var DefaultLogger *Logger
 
 func init() {
-	conf := Config{}
-	config.LoadConfig("Log", &conf)
-	if conf.Level == "" {
-		conf.Level = "info"
-	}
-	if conf.Truncations == "" {
-		conf.Truncations = "github.com/, golang.org/, /ssgo/"
-	}
-	if conf.Sensitive == "" {
-		conf.Sensitive = standard.LogDefaultSensitive
-	}
-	if conf.SensitiveRule == "" {
-		conf.SensitiveRule = "12:4*4, 11:3*4, 7:2*2, 3:1*1, 2:1*0"
-	}
+	RegisterWriterMaker("es", esWriterMaker)
+	RegisterWriterMaker("ess", esWriterMaker)
 
+	conf := Config{}
+	config.LoadConfig("log", &conf)
 	DefaultLogger = NewLogger(conf)
 }
 

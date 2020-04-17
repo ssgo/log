@@ -4,20 +4,18 @@ import (
 	"encoding/json"
 	"github.com/ssgo/standard"
 	"github.com/ssgo/u"
-	"math"
 	"reflect"
 	"strings"
 	"time"
 )
 
-func MakeTime(logTime float64) time.Time {
-	ts := int64(math.Floor(logTime))
-	tns := int64((logTime-float64(ts)) * 1e9)
-	return time.Unix(ts, tns)
+func MakeTime(logTime string) time.Time {
+	tm, _ := time.Parse(time.RFC3339Nano, logTime)
+	return tm
 }
 
-func MakeLogTime(time time.Time) float64 {
-	return float64(time.UnixNano()) / 1e9
+func MakeLogTime(tm time.Time) string {
+	return tm.Format(time.RFC3339Nano)
 }
 
 func MakeUesdTime(startTime, endTime time.Time) float32 {
@@ -34,17 +32,27 @@ func ParseBaseLog(line string) *standard.BaseLog {
 		if err != nil {
 			return ParseBadLog(line)
 		} else {
-			baseLog := standard.BaseLog{Extra: map[string]interface{}{}}
+			baseLog := standard.BaseLog{Extra: map[string]string{}}
 			for k, v := range l {
 				switch k {
+				case "logName":
+					baseLog.LogName = u.String(v)
 				case "logType":
 					baseLog.LogType = u.String(v)
 				case "logTime":
-					baseLog.LogTime = u.Float64(v)
+					baseLog.LogTime = u.String(v)
 				case "traceId":
 					baseLog.TraceId = u.String(v)
+				case "imageName":
+					baseLog.ImageName = u.String(v)
+				case "imageTag":
+					baseLog.ImageTag = u.String(v)
+				case "serverName":
+					baseLog.ServerName = u.String(v)
+				case "serverIp":
+					baseLog.ServerIp = u.String(v)
 				default:
-					baseLog.Extra[k] = v
+					baseLog.Extra[k] = u.String(v)
 				}
 			}
 			return &baseLog
@@ -53,7 +61,7 @@ func ParseBaseLog(line string) *standard.BaseLog {
 }
 
 func ParseBadLog(line string) *standard.BaseLog {
-	baseLog := standard.BaseLog{Extra: map[string]interface{}{}}
+	baseLog := standard.BaseLog{Extra: map[string]string{}}
 	baseLog.LogType = standard.LogTypeUndefined
 	if len(line) > 19 && line[19] == ' ' {
 		tm, err := time.Parse("2006/01/02 15:04:05", line[0:19])
@@ -79,13 +87,22 @@ func ParseBadLog(line string) *standard.BaseLog {
 }
 
 func ParseSpecialLog(from *standard.BaseLog, to interface{}) {
+	from.Extra["logName"] = from.LogName
 	from.Extra["logType"] = from.LogType
 	from.Extra["logTime"] = from.LogTime
 	from.Extra["traceId"] = from.TraceId
+	from.Extra["imageName"] = from.ImageName
+	from.Extra["imageTag"] = from.ImageTag
+	from.Extra["serverName"] = from.ServerName
+	from.Extra["serverIp"] = from.ServerIp
 	u.Convert(from.Extra, to)
 	delete(from.Extra, "logType")
 	delete(from.Extra, "logTime")
 	delete(from.Extra, "traceId")
+	delete(from.Extra, "imageName")
+	delete(from.Extra, "imageTag")
+	delete(from.Extra, "serverName")
+	delete(from.Extra, "serverIp")
 	v := reflect.ValueOf(to)
 	for v.Kind() == reflect.Ptr {
 		v = v.Elem()

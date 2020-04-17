@@ -132,7 +132,7 @@ func TestLogRequest(t *testing.T) {
 
 	startTime := time.Now()
 	time.Sleep(100 * time.Nanosecond)
-	logger.Request("server1", "appA", "10.3.22.178:32421", "59.32.113.241", "appB", "10.3.22.171:12334", "HJDWAdaukhASd7", "8suAHDgsyakHU", "udaHdhagy31Dd", "abc.com", "http", "1.1", 1, 0, "POST", "/users/{userId}/events", map[string]string{"Access-Token": "abcdefg"}, map[string]interface{}{"userId": 31123}, log.MakeUesdTime(startTime, time.Now()), 200, map[string]string{"XXX": "abc"}, 3401, map[string]interface{}{"events": nil}, map[string]interface{}{"specialTag": true})
+	logger.Request("server1", "appA", "10.3.22.178:32421", "59.32.113.241", "appB", "10.3.22.171:12334", "HJDWAdaukhASd7", "8suAHDgsyakHU", "udaHdhagy31Dd", "abc.com", "http", "1.1", 1, 0, "POST", "/users/{userId}/events", map[string]string{"Access-Token": "abcdefg"}, map[string]string{"userId": "31123"}, log.MakeUesdTime(startTime, time.Now()), 200, map[string]string{"XXX": "abc"}, 3401, u.String(map[string]interface{}{"events": nil}), map[string]interface{}{"specialTag": true})
 	output := bufw.String()
 
 	//o := map[string]interface{}{}

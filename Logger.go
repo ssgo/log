@@ -7,7 +7,9 @@ import (
 	"github.com/ssgo/standard"
 	"github.com/ssgo/u"
 	"log"
+	"net"
 	"os"
+	"path"
 	"reflect"
 	"regexp"
 	"runtime"
@@ -23,8 +25,10 @@ const WARNING LevelType = 3
 const ERROR LevelType = 4
 
 type Logger struct {
+	config          Config
 	level           LevelType
 	goLogger        *log.Logger
+	writer          Writer
 	truncations     []string
 	sensitive       map[string]bool
 	regexSensitive  []*regexp.Regexp
@@ -34,6 +38,7 @@ type Logger struct {
 }
 
 type Config struct {
+	Name           string
 	Level          string
 	File           string
 	Truncations    string
@@ -48,12 +53,66 @@ type sensitiveRuleInfo struct {
 	rightNum  int
 }
 
+var writerMakers = make(map[string]func(*Config) Writer)
+
+var dockerImageName = ""
+var dockerImageTag = ""
+var serverName = ""
+var serverIp = ""
+
 func init() {
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ldate | log.Lmicroseconds)
+
+	dockerImageName = os.Getenv("DOCKER_IMAGE_NAME")
+	dockerImageTag = os.Getenv("DOCKER_IMAGE_TAG")
+	serverName, _ = os.Hostname()
+	addrs, err := net.InterfaceAddrs()
+	if err == nil {
+		for _, a := range addrs {
+			an := a.(*net.IPNet)
+			// 忽略 Docker 私有网段
+			if an.IP.IsGlobalUnicast() && !strings.HasPrefix(an.IP.To4().String(), "172.17.") {
+				serverIp = an.IP.To4().String()
+			}
+		}
+	}
+}
+
+func RegisterWriterMaker(name string, f func(*Config) Writer) {
+	writerMakers[name] = f
 }
 
 func NewLogger(conf Config) *Logger {
+	if conf.Level == "" {
+		conf.Level = "info"
+	}
+	if conf.Truncations == "" {
+		conf.Truncations = "github.com/, golang.org/, /ssgo/"
+	}
+	if conf.Sensitive == "" {
+		conf.Sensitive = standard.LogDefaultSensitive
+	}
+	if conf.SensitiveRule == "" {
+		conf.SensitiveRule = "12:4*4, 11:3*4, 7:2*2, 3:1*1, 2:1*0"
+	}
+
+	if conf.Name == "" {
+		// 尝试读取 $DISCOVER_APP
+		conf.Name = os.Getenv("DISCOVER_APP")
+		if conf.Name == "" {
+			conf.Name = os.Getenv("discover_app")
+			if conf.Name == "" {
+				// 尝试读取 $DOCKER_IMAGE_NAME
+				conf.Name = os.Getenv("DOCKER_IMAGE_NAME")
+				if conf.Name == "" {
+					// 尝试读取进程名字
+					conf.Name = path.Base(os.Args[0])
+				}
+			}
+		}
+	}
+
 	logger := Logger{
 		truncations: u.SplitTrim(conf.Truncations, ","),
 	}
@@ -117,13 +176,28 @@ func NewLogger(conf Config) *Logger {
 	}
 
 	if conf.File != "" {
-		fp, err := os.OpenFile(conf.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-		if err == nil {
-			logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
+		if strings.Contains(conf.File, "://") {
+			writerName := strings.SplitN(conf.File, "://", 2)[0]
+			m := writerMakers[writerName]
+			if m != nil {
+				w := writerMakers[writerName](&conf)
+				if w != nil {
+					logger.writer = w
+					writers = append(writers, w)
+				}
+			} else {
+				logger.Error("unsupported logger writer "+writerName, "file", conf.File)
+			}
 		} else {
-			logger.Error(err.Error())
+			fp, err := os.OpenFile(conf.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+			if err == nil {
+				logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
+			} else {
+				logger.Error(err.Error())
+			}
 		}
 	}
+	logger.config = conf
 	return &logger
 }
 
@@ -198,7 +272,14 @@ func (logger *Logger) Log(data interface{}) {
 		} else {
 			u.FixUpperCase(buf, nil)
 		}
-		if logger.goLogger == nil {
+		if logger.writer != nil {
+			if writerRunning {
+				logger.writer.Log(buf)
+			} else {
+				log.Print("writer not running")
+				log.Print(string(buf))
+			}
+		} else if logger.goLogger == nil {
 			log.Print(string(buf))
 		} else {
 			logger.goLogger.Print(string(buf))
@@ -274,14 +355,14 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 		changed := false
 		for i := 0; i < v.NumField(); i++ {
 			newValue := logger.fixLogData(t.Field(i).Name, v.Field(i), level+1)
-			if newValue != nil {// && v.Field(i).CanSet()
+			if newValue != nil { // && v.Field(i).CanSet()
 				changed = true
 				v.Field(i).Set(*newValue)
 			}
 		}
 		if changed {
 			return newValue
-		}else{
+		} else {
 			return nil
 		}
 	} else if t.Kind() == reflect.Map {

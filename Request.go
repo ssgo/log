@@ -4,14 +4,14 @@ import (
 	"github.com/ssgo/standard"
 )
 
-func (logger *Logger) Request(serverId, app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extra ...interface{}) {
+func (logger *Logger) Request(serverId, app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]string, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData string, extra ...interface{}) {
 	if !logger.CheckLevel(INFO) {
 		return
 	}
 	logger.Log(logger.MakeRequestLog(standard.LogTypeRequest, serverId, app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto, authLevel, priority, method, path, requestHeaders, requestData, usedTime, responseCode, responseHeaders, responseDataLength, responseData, extra...))
 }
 
-func (logger *Logger) MakeRequestLog(logType, serverId, app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]interface{}, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData interface{}, extra ...interface{}) standard.RequestLog {
+func (logger *Logger) MakeRequestLog(logType, serverId, app, node, clientIp, fromApp, fromNode, clientId, sessionId, requestId, host, scheme, proto string, authLevel, priority int, method, path string, requestHeaders map[string]string, requestData map[string]string, usedTime float32, responseCode int, responseHeaders map[string]string, responseDataLength uint, responseData string, extra ...interface{}) standard.RequestLog {
 	return standard.RequestLog{
 		BaseLog:    logger.MakeBaseLog(logType, extra...),
 		ServerId:           serverId,

@@ -2,24 +2,26 @@ package log
 
 import (
 	"github.com/ssgo/standard"
+	"time"
 )
 
-func (logger *Logger) Task(serverId, app, name string, succeed bool, usedTime float32, memo string, extra ...interface{}) {
+func (logger *Logger) Task(name, args string, succeed bool, node string, startTime time.Time, usedTime float32, memo string, extra ...interface{}) {
 	if !logger.CheckLevel(INFO) {
 		return
 	}
 
-	logger.Log(logger.MakeTaskLog(standard.LogTypeTask, serverId, app, name, succeed, usedTime, memo, extra...))
+	logger.Log(logger.MakeTaskLog(standard.LogTypeTask, name, args, succeed, node, startTime, usedTime, memo, extra...))
 }
 
-func (logger *Logger) MakeTaskLog(logType, serverId, app, name string, succeed bool, usedTime float32, memo string, extra ...interface{}) standard.TaskLog {
+func (logger *Logger) MakeTaskLog(logType, name, args string, succeed bool, node string, startTime time.Time, usedTime float32, memo string, extra ...interface{}) standard.TaskLog {
 	return standard.TaskLog{
-		BaseLog:  logger.MakeBaseLog(logType, extra...),
-		ServerId: serverId,
-		App:      app,
-		Name:     name,
-		Succeed:  succeed,
-		UsedTime: usedTime,
-		Memo:     memo,
+		BaseLog:   logger.MakeBaseLog(logType, extra...),
+		Name:      name,
+		Args:      args,
+		Succeed:   succeed,
+		Node:      name,
+		StartTime: MakeLogTime(startTime),
+		UsedTime:  usedTime,
+		Memo:      memo,
 	}
 }
