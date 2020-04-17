@@ -32,7 +32,7 @@ func ParseBaseLog(line string) *standard.BaseLog {
 		if err != nil {
 			return ParseBadLog(line)
 		} else {
-			baseLog := standard.BaseLog{Extra: map[string]string{}}
+			baseLog := standard.BaseLog{Extra: map[string]interface{}{}}
 			for k, v := range l {
 				switch k {
 				case "logName":
@@ -61,7 +61,7 @@ func ParseBaseLog(line string) *standard.BaseLog {
 }
 
 func ParseBadLog(line string) *standard.BaseLog {
-	baseLog := standard.BaseLog{Extra: map[string]string{}}
+	baseLog := standard.BaseLog{Extra: map[string]interface{}{}}
 	baseLog.LogType = standard.LogTypeUndefined
 	if len(line) > 19 && line[19] == ' ' {
 		tm, err := time.Parse("2006/01/02 15:04:05", line[0:19])

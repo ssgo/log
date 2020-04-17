@@ -2,7 +2,6 @@ package log
 
 import (
 	"github.com/ssgo/standard"
-	"github.com/ssgo/u"
 	"time"
 )
 
@@ -83,16 +82,16 @@ func (logger *Logger) MakeBaseLog(logType string, extra ...interface{}) standard
 		ServerIp:   serverIp,
 	}
 	if len(extra) == 1 {
-		if mapData, ok := extra[0].(map[string]string); ok {
+		if mapData, ok := extra[0].(map[string]interface{}); ok {
 			baseLog.Extra = mapData
 			return baseLog
 		}
 	}
 	if len(extra) > 1 {
-		baseLog.Extra = map[string]string{}
+		baseLog.Extra = map[string]interface{}{}
 		for i := 1; i < len(extra); i += 2 {
 			if k, ok := extra[i-1].(string); ok {
-				baseLog.Extra[k] = u.String(extra[i])
+				baseLog.Extra[k] = extra[i]
 			}
 		}
 	}
