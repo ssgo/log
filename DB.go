@@ -2,6 +2,7 @@ package log
 
 import (
 	"github.com/ssgo/standard"
+	"github.com/ssgo/u"
 )
 
 func (logger *Logger) DB(dbType, dsn, query string, args []interface{}, usedTime float32, extra ...interface{}) {
@@ -23,11 +24,11 @@ func (logger *Logger) DBError(error, dbType, dsn, query string, args []interface
 
 func (logger *Logger) MakeDBLog(logType, dbType, dsn, query string, args []interface{}, usedTime float32, extra ...interface{}) standard.DBLog {
 	return standard.DBLog{
-		BaseLog:  logger.MakeBaseLog(logType, extra...),
-		DbType:   dbType,
-		Dsn:      dsn,
-		Query:    query,
-		Args:     args,
-		UsedTime: usedTime,
+		BaseLog:   logger.MakeBaseLog(logType, extra...),
+		DbType:    dbType,
+		Dsn:       dsn,
+		Query:     query,
+		QueryArgs: u.String(args),
+		UsedTime:  usedTime,
 	}
 }

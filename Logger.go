@@ -233,13 +233,14 @@ func flat(v reflect.Value, out reflect.Value) {
 	for i := 0; i < v.NumField(); i++ {
 		if t.Field(i).Anonymous && t.Field(i).Type.Kind() == reflect.Struct {
 			flat(v.Field(i), out)
-		} else if t.Field(i).Name == "Extra" && t.Field(i).Type.Kind() == reflect.Map {
-			for _, mk := range v.Field(i).MapKeys() {
-				out.SetMapIndex(mk, v.Field(i).MapIndex(mk))
-			}
 		} else {
 			out.SetMapIndex(reflect.ValueOf(t.Field(i).Name), v.Field(i))
 		}
+		//else if t.Field(i).Name == "Extra" && t.Field(i).Type.Kind() == reflect.Map {
+		//	for _, mk := range v.Field(i).MapKeys() {
+		//		out.SetMapIndex(mk, v.Field(i).MapIndex(mk))
+		//	}
+		//}
 	}
 }
 
@@ -257,6 +258,14 @@ func (logger *Logger) Log(data interface{}) {
 
 	if logger.sensitive != nil {
 		logger.fixLogData("", v, 0)
+	}
+
+
+	// make extra to string
+	extraKey := reflect.ValueOf("Extra")
+	extraValue := v.MapIndex(extraKey)
+	if extraValue.IsValid() && extraValue.CanInterface() {
+		v.SetMapIndex(extraKey, reflect.ValueOf(u.String(extraValue.Interface())))
 	}
 
 	buf, err := json.Marshal(v.Interface())

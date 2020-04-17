@@ -31,6 +31,7 @@ func writerRunner() {
 		}
 
 		if !writerRunning {
+			time.Sleep(100 * time.Millisecond)
 			for _, w := range writers {
 				w.Run()
 			}

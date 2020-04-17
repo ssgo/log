@@ -81,6 +81,7 @@ func (logger *Logger) MakeBaseLog(logType string, extra ...interface{}) standard
 		ServerName: serverName,
 		ServerIp:   serverIp,
 	}
+	baseLog.Extra = map[string]interface{}{}
 	if len(extra) == 1 {
 		if mapData, ok := extra[0].(map[string]interface{}); ok {
 			baseLog.Extra = mapData
@@ -88,7 +89,6 @@ func (logger *Logger) MakeBaseLog(logType string, extra ...interface{}) standard
 		}
 	}
 	if len(extra) > 1 {
-		baseLog.Extra = map[string]interface{}{}
 		for i := 1; i < len(extra); i += 2 {
 			if k, ok := extra[i-1].(string); ok {
 				baseLog.Extra[k] = extra[i]
