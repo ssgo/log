@@ -231,6 +231,9 @@ func (logger *Logger) CheckLevel(logLevel LevelType) bool {
 func flat(v reflect.Value, out reflect.Value) {
 	t := v.Type()
 	for i := 0; i < v.NumField(); i++ {
+		if t.Field(i).Name[0] > 90 {
+			continue
+		}
 		if t.Field(i).Anonymous && t.Field(i).Type.Kind() == reflect.Struct {
 			flat(v.Field(i), out)
 		} else {
@@ -360,6 +363,9 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 			v2 := reflect.New(v.Type()).Elem()
 			newValue = &v2
 			for i := 0; i < v.NumField(); i++ {
+				if t.Field(i).Name[0] > 90 {
+					continue
+				}
 				if v2.Field(i).CanSet() {
 					v2.Field(i).Set(v.Field(i))
 				}
@@ -368,6 +374,9 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 		}
 		changed := false
 		for i := 0; i < v.NumField(); i++ {
+			if t.Field(i).Name[0] > 90 {
+				continue
+			}
 			newValue := logger.fixLogData(t.Field(i).Name, v.Field(i), level+1)
 			if newValue != nil { // && v.Field(i).CanSet()
 				changed = true
