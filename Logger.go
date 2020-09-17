@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -28,6 +29,7 @@ type Logger struct {
 	config          Config
 	level           LevelType
 	goLogger        *log.Logger
+	fp              *os.File
 	writer          Writer
 	truncations     []string
 	sensitive       map[string]bool
@@ -41,6 +43,7 @@ type Config struct {
 	Name           string
 	Level          string
 	File           string
+	SplitTag       string
 	Truncations    string
 	Sensitive      string
 	RegexSensitive string
@@ -138,7 +141,7 @@ func NewLogger(conf Config) *Logger {
 			if err == nil {
 				logger.regexSensitive = append(logger.regexSensitive, r)
 			} else {
-				logger.Error(err.Error())
+				log.Println(err.Error())
 			}
 		}
 		if len(logger.regexSensitive) == 0 {
@@ -194,16 +197,45 @@ func NewLogger(conf Config) *Logger {
 				logger.Error("unsupported logger writer "+writerName, "file", conf.File)
 			}
 		} else {
-			fp, err := os.OpenFile(conf.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+			logFile := conf.File
+			if conf.SplitTag != "" {
+				logFile += "."+time.Now().Format(conf.SplitTag)
+			}
+			fp, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 			if err == nil {
+				logger.fp = fp
 				logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
 			} else {
-				logger.Error(err.Error())
+				log.Println(err.Error())
 			}
 		}
 	}
 	logger.config = conf
 	return &logger
+}
+
+func (logger *Logger) Split(tag string) {
+	if tag == "" {
+		tag = time.Now().Format("2006-01-02T15:04:05")
+	}
+
+	logger.goLogger = nil
+	err := logger.fp.Close()
+	if err != nil {
+		log.Println(err.Error())
+	}
+	err = os.Rename(logger.config.File, logger.config.File+"."+tag)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	fp, err := os.OpenFile(logger.config.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err == nil {
+		logger.fp = fp
+		logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
+	} else {
+		log.Println(err.Error())
+	}
 }
 
 func (logger *Logger) SetDesensitization(f func(v string) string) {
@@ -247,6 +279,9 @@ func flat(v reflect.Value, out reflect.Value) {
 	}
 }
 
+var prevDay string
+var changeDayLock sync.Mutex = sync.Mutex{}
+
 func (logger *Logger) Log(data interface{}) {
 
 	v := reflect.ValueOf(data)
@@ -262,7 +297,6 @@ func (logger *Logger) Log(data interface{}) {
 	if logger.sensitive != nil {
 		logger.fixLogData("", v, 0)
 	}
-
 
 	// make extra to string
 	extraKey := reflect.ValueOf("Extra")
@@ -299,6 +333,33 @@ func (logger *Logger) Log(data interface{}) {
 		} else if logger.goLogger == nil {
 			log.Print(string(buf))
 		} else {
+			// 输出到文件
+			if logger.config.SplitTag != ""{
+				nowDay := time.Now().Format(logger.config.SplitTag)
+				if prevDay == "" {
+					changeDayLock.Lock()
+					if prevDay == "" {
+						prevDay = nowDay
+					}
+					changeDayLock.Unlock()
+				}
+				if nowDay != prevDay {
+					changeDayLock.Lock()
+					if nowDay != prevDay {
+						prevDay = nowDay
+						// 切换日志文件
+						fp, err := os.OpenFile(logger.config.File+"."+nowDay, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+						if err == nil {
+							logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
+							logger.fp.Close()
+							logger.fp = fp
+						} else {
+							log.Println(err.Error())
+						}
+					}
+					changeDayLock.Unlock()
+				}
+			}
 			logger.goLogger.Print(string(buf))
 		}
 	}
