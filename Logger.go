@@ -43,6 +43,7 @@ type Config struct {
 	Name           string
 	Level          string
 	File           string
+	Fast           bool
 	SplitTag       string
 	Truncations    string
 	Sensitive      string
@@ -199,7 +200,7 @@ func NewLogger(conf Config) *Logger {
 		} else {
 			logFile := conf.File
 			if conf.SplitTag != "" {
-				logFile += "."+time.Now().Format(conf.SplitTag)
+				//logFile += "." + time.Now().Format(conf.SplitTag)
 			}
 			fp, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 			if err == nil {
@@ -216,7 +217,7 @@ func NewLogger(conf Config) *Logger {
 
 func (logger *Logger) Split(tag string) {
 	if tag == "" {
-		tag = time.Now().Format("2006-01-02T15:04:05")
+		//tag = time.Now().Format("2006-01-02T15:04:05")
 	}
 
 	logger.goLogger = nil
@@ -284,33 +285,42 @@ var changeDayLock sync.Mutex = sync.Mutex{}
 
 func (logger *Logger) Log(data interface{}) {
 
-	v := reflect.ValueOf(data)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-	if v.Kind() == reflect.Struct {
-		out := reflect.ValueOf(map[string]interface{}{})
-		flat(v, out)
-		v = out
-	}
+	var buf []byte
+	var err error
+	if !logger.config.Fast {
+		// 快速模式不进行扁平化、脱敏等操作
+		v := reflect.ValueOf(data)
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		}
+		if v.Kind() == reflect.Struct {
+			out := reflect.ValueOf(map[string]interface{}{})
+			flat(v, out)
+			v = out
+		}
 
-	if logger.sensitive != nil {
-		logger.fixLogData("", v, 0)
+		if logger.sensitive != nil {
+			logger.fixLogData("", v, 0)
+		}
+		// make extra to string
+		extraKey := reflect.ValueOf("Extra")
+		extraValue := v.MapIndex(extraKey)
+		if extraValue.IsValid() && extraValue.CanInterface() {
+			v.SetMapIndex(extraKey, reflect.ValueOf(u.String(extraValue.Interface())))
+		}
+		buf, err = json.Marshal(v.Interface())
+	} else {
+		//t1 := time.Now()
+		buf, err = json.Marshal(data)
+		//t2 := time.Now()
+		//fmt.Println("\n\n === Marshal", float32(t2.UnixNano()-t1.UnixNano())/1000000)
+		//t1 = t2
 	}
-
-	// make extra to string
-	extraKey := reflect.ValueOf("Extra")
-	extraValue := v.MapIndex(extraKey)
-	if extraValue.IsValid() && extraValue.CanInterface() {
-		v.SetMapIndex(extraKey, reflect.ValueOf(u.String(extraValue.Interface())))
-	}
-
-	buf, err := json.Marshal(v.Interface())
 
 	if err != nil {
 		// 无法序列化的数据包装为 undefined
 		buf, err = json.Marshal(map[string]interface{}{
-			"logTime":   MakeLogTime(time.Now()),
+			//"logTime":   MakeLogTime(time.Now()),
 			"logType":   standard.LogTypeUndefined,
 			"traceId":   logger.traceId,
 			"undefined": fmt.Sprint(data),
@@ -323,6 +333,7 @@ func (logger *Logger) Log(data interface{}) {
 		} else {
 			u.FixUpperCase(buf, nil)
 		}
+
 		if logger.writer != nil {
 			if writerRunning {
 				logger.writer.Log(buf)
@@ -334,7 +345,7 @@ func (logger *Logger) Log(data interface{}) {
 			log.Print(string(buf))
 		} else {
 			// 输出到文件
-			if logger.config.SplitTag != ""{
+			if logger.config.SplitTag != "" {
 				nowDay := time.Now().Format(logger.config.SplitTag)
 				if prevDay == "" {
 					changeDayLock.Lock()
