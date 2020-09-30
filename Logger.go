@@ -393,7 +393,7 @@ func (logger *Logger) getCallStacks() []string {
 			for _, truncation := range logger.truncations {
 				pos := strings.Index(file, truncation)
 				if pos != -1 {
-					fmt.Println(file, file[pos+len(truncation):])
+					//fmt.Println(file, file[pos+len(truncation):])
 					file = file[pos+len(truncation):]
 				}
 			}
