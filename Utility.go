@@ -52,7 +52,7 @@ func ParseBaseLog(line string) *standard.BaseLog {
 				case "serverIp":
 					baseLog.ServerIp = u.String(v)
 				default:
-					baseLog.Extra[k] = u.String(v)
+					baseLog.Extra[k] = v
 				}
 			}
 			return &baseLog
