@@ -200,7 +200,7 @@ func NewLogger(conf Config) *Logger {
 		} else {
 			logFile := conf.File
 			if conf.SplitTag != "" {
-				//logFile += "." + time.Now().Format(conf.SplitTag)
+				logFile += "." + time.Now().Format(conf.SplitTag)
 			}
 			fp, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 			if err == nil {
