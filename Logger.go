@@ -411,8 +411,10 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 	if level >= 10 {
 		return nil
 	}
+	isPtr := false
 	for v.Kind() == reflect.Ptr {
 		v = v.Elem()
+		isPtr = true
 	}
 	if v.Kind() == reflect.Ptr && v.IsNil() {
 		return nil
@@ -457,6 +459,16 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 			}
 		}
 		if changed {
+			if isPtr {
+				if newValue.CanAddr() {
+					pv := newValue.Addr()
+					return &pv
+				}else{
+					pv := reflect.New(newValue.Type())
+					pv.Elem().Set(*newValue)
+					return &pv
+				}
+			}
 			return newValue
 		} else {
 			return nil
@@ -478,6 +490,16 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 	} else {
 		if logger.isSensitiveField(k) {
 			newValue := reflect.ValueOf(logger.fixValue(u.String(v.Interface())))
+			if isPtr {
+				if newValue.CanAddr() {
+					pv := newValue.Addr()
+					return &pv
+				}else{
+					pv := reflect.New(newValue.Type())
+					pv.Elem().Set(newValue)
+					return &pv
+				}
+			}
 			return &newValue
 		} else if logger.regexSensitive != nil {
 			prevStr := u.String(v.Interface())
@@ -498,6 +520,16 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 			}
 			if newStr != prevStr {
 				newValue := reflect.ValueOf(newStr)
+				if isPtr {
+					if newValue.CanAddr() {
+						pv := newValue.Addr()
+						return &pv
+					}else{
+						pv := reflect.New(newValue.Type())
+						pv.Elem().Set(newValue)
+						return &pv
+					}
+				}
 				return &newValue
 			}
 		}
