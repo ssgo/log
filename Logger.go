@@ -200,6 +200,7 @@ func NewLogger(conf Config) *Logger {
 		} else {
 			logFile := conf.File
 			if conf.SplitTag != "" {
+				// 使用切割的日志文件
 				logFile += "." + time.Now().Format(conf.SplitTag)
 			}
 			fp, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
@@ -355,20 +356,23 @@ func (logger *Logger) Log(data interface{}) {
 					changeDayLock.Unlock()
 				}
 				if nowDay != prevDay {
+					logger.goLogger.Print("start changed log file to " + nowDay + " from " + prevDay)
 					changeDayLock.Lock()
 					if nowDay != prevDay {
 						prevDay = nowDay
 						// 切换日志文件
-						fp, err := os.OpenFile(logger.config.File+"."+nowDay, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-						if err == nil {
+						fp, err2 := os.OpenFile(logger.config.File+"."+nowDay, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+						if err2 == nil {
 							logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
 							logger.fp.Close()
 							logger.fp = fp
+							logger.goLogger.Print("succeed changed log file to " + nowDay + " from " + prevDay)
 						} else {
-							log.Println(err.Error())
+							logger.goLogger.Print("failed changed log file to " + nowDay + " from " + prevDay)
 						}
 					}
 					changeDayLock.Unlock()
+					logger.goLogger.Print("stop changed log file to " + nowDay + " from " + prevDay)
 				}
 			}
 			logger.goLogger.Print(string(buf))
@@ -463,7 +467,7 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 				if newValue.CanAddr() {
 					pv := newValue.Addr()
 					return &pv
-				}else{
+				} else {
 					pv := reflect.New(newValue.Type())
 					pv.Elem().Set(*newValue)
 					return &pv
@@ -494,7 +498,7 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 				if newValue.CanAddr() {
 					pv := newValue.Addr()
 					return &pv
-				}else{
+				} else {
 					pv := reflect.New(newValue.Type())
 					pv.Elem().Set(newValue)
 					return &pv
@@ -524,7 +528,7 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 					if newValue.CanAddr() {
 						pv := newValue.Addr()
 						return &pv
-					}else{
+					} else {
 						pv := reflect.New(newValue.Type())
 						pv.Elem().Set(newValue)
 						return &pv
