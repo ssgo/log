@@ -347,32 +347,35 @@ func (logger *Logger) Log(data interface{}) {
 		} else {
 			// 输出到文件
 			if logger.config.SplitTag != "" {
-				nowDay := time.Now().Format(logger.config.SplitTag)
+				today := time.Now().Format(logger.config.SplitTag)
 				if prevDay == "" {
 					changeDayLock.Lock()
 					if prevDay == "" {
-						prevDay = nowDay
+						prevDay = today
 					}
 					changeDayLock.Unlock()
 				}
-				if nowDay != prevDay {
-					logger.goLogger.Print("start changed log file to " + nowDay + " from " + prevDay)
+				if today != prevDay {
+					logger.goLogger.Print("start changed log file to " + today + " from " + prevDay)
 					changeDayLock.Lock()
-					if nowDay != prevDay {
-						prevDay = nowDay
+					if today != prevDay {
+						prevDay = today
+
 						// 切换日志文件
-						fp, err2 := os.OpenFile(logger.config.File+"."+nowDay, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+						fp, err2 := os.OpenFile(logger.config.File+"."+today, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 						if err2 == nil {
 							logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
-							logger.fp.Close()
+							if logger.fp != nil {
+								_ = logger.fp.Close()
+							}
 							logger.fp = fp
-							logger.goLogger.Print("succeed changed log file to " + nowDay + " from " + prevDay)
+							logger.goLogger.Print("succeed changed log file to " + today + " from " + prevDay)
 						} else {
-							logger.goLogger.Print("failed changed log file to " + nowDay + " from " + prevDay)
+							logger.goLogger.Print("failed changed log file to " + today + " from " + prevDay)
 						}
 					}
 					changeDayLock.Unlock()
-					logger.goLogger.Print("stop changed log file to " + nowDay + " from " + prevDay)
+					logger.goLogger.Print("stop changed log file to " + today + " from " + prevDay)
 				}
 			}
 			logger.goLogger.Print(string(buf))
