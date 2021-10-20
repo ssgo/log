@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-func (logger *Logger) Statistic(serverId, app, name string, startTime, endTime time.Time, total, failed uint, avg, min, max float64, extra ...interface{}) {
+func (logger *Logger) Statistic(serverId, app, name string, startTime, endTime time.Time, times, failed uint, avg, min, max float64, extra ...interface{}) {
 	if !logger.CheckLevel(INFO) {
 		return
 	}
 
-	logger.Log(logger.MakeStatisticLog(standard.LogTypeStatistic, serverId, app, name, startTime, endTime, total, failed, avg, min, max, extra...))
+	logger.Log(logger.MakeStatisticLog(standard.LogTypeStatistic, serverId, app, name, startTime, endTime, times, failed, avg, min, max, extra...))
 }
 
-func (logger *Logger) MakeStatisticLog(logType, serverId, app, name string, startTime, endTime time.Time, total, failed uint, avg, min, max float64, extra ...interface{}) standard.StatisticLog {
+func (logger *Logger) MakeStatisticLog(logType, serverId, app, name string, startTime, endTime time.Time, times, failed uint, avg, min, max float64, extra ...interface{}) standard.StatisticLog {
 	return standard.StatisticLog{
 		BaseLog:   logger.MakeBaseLog(logType, extra...),
 		ServerId:  serverId,
@@ -21,7 +21,7 @@ func (logger *Logger) MakeStatisticLog(logType, serverId, app, name string, star
 		Name:      name,
 		StartTime: MakeLogTime(startTime),
 		EndTime:   MakeLogTime(endTime),
-		Total:     total,
+		Times:     times,
 		Failed:    failed,
 		Avg:       avg,
 		Min:       min,
