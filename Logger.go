@@ -24,6 +24,7 @@ const DEBUG LevelType = 1
 const INFO LevelType = 2
 const WARNING LevelType = 3
 const ERROR LevelType = 4
+const CLOSE LevelType = 5
 
 type Logger struct {
 	config          Config
@@ -214,6 +215,10 @@ func NewLogger(conf Config) *Logger {
 	}
 	logger.config = conf
 	return &logger
+}
+
+func (logger *Logger) SetLevel(level LevelType) {
+	logger.level = level
 }
 
 func (logger *Logger) Split(tag string) {
