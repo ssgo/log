@@ -419,6 +419,14 @@ func (logger *Logger) isSensitiveField(s string) bool {
 	return logger.sensitive[fixField(s)]
 }
 
+func (logger *Logger) FixValue(v interface{}) {
+	if v1, ok := v.(reflect.Value); ok {
+		logger.fixLogData("", v1, 0)
+	} else {
+		logger.fixLogData("", reflect.ValueOf(v), 0)
+	}
+}
+
 func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.Value {
 	if level >= 10 {
 		return nil
