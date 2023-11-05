@@ -34,22 +34,23 @@ func ParseBaseLog(line string) *standard.BaseLog {
 		} else {
 			baseLog := standard.BaseLog{Extra: map[string]interface{}{}}
 			for k, v := range l {
-				switch k {
-				case "logName":
+				lk := strings.ToLower(k)
+				switch lk {
+				case "logname":
 					baseLog.LogName = u.String(v)
-				case "logType":
+				case "logtype":
 					baseLog.LogType = u.String(v)
-				case "logTime":
+				case "logtime":
 					baseLog.LogTime = u.String(v)
-				case "traceId":
+				case "traceid":
 					baseLog.TraceId = u.String(v)
-				case "imageName":
+				case "imagename":
 					baseLog.ImageName = u.String(v)
-				case "imageTag":
+				case "imagetag":
 					baseLog.ImageTag = u.String(v)
-				case "serverName":
+				case "servername":
 					baseLog.ServerName = u.String(v)
-				case "serverIp":
+				case "serverip":
 					baseLog.ServerIp = u.String(v)
 				default:
 					baseLog.Extra[k] = v

@@ -50,6 +50,7 @@ type Config struct {
 	Sensitive      string
 	RegexSensitive string
 	SensitiveRule  string
+	KeepKeyCase    bool // 是否保持Key的首字母大小写？默认一律使用小写
 }
 
 type sensitiveRuleInfo struct {
@@ -334,10 +335,12 @@ func (logger *Logger) Log(data interface{}) {
 	}
 
 	if err == nil {
-		if bytes.Index(buf, []byte("Header")) != -1 {
-			u.FixUpperCase(buf, []string{"Header"})
-		} else {
-			u.FixUpperCase(buf, nil)
+		if !logger.config.KeepKeyCase {
+			if bytes.Index(buf, []byte("Header")) != -1 {
+				u.FixUpperCase(buf, []string{"Header"})
+			} else {
+				u.FixUpperCase(buf, nil)
+			}
 		}
 
 		if logger.writer != nil {
