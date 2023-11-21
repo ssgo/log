@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"container/list"
 	"encoding/json"
 	"fmt"
 	"github.com/ssgo/standard"
@@ -26,11 +27,86 @@ const WARNING LevelType = 3
 const ERROR LevelType = 4
 const CLOSE LevelType = 5
 
+type Log struct {
+	time    time.Time
+	message string
+}
+
+type File struct {
+	fileName  string
+	lastSplit string
+	splitTag  string
+	fp        *os.File
+	list      *list.List
+	lock      sync.Mutex
+}
+
+func (f *File) Write(tm time.Time, str string) {
+	f.lock.Lock()
+	f.list.PushBack(Log{
+		time:    tm,
+		message: str,
+	})
+	f.lock.Unlock()
+}
+
+func (f *File) Run() {
+	f.lock.Lock()
+	var runList *list.List = nil
+	if f.list.Len() > 0 {
+		runList = f.list
+		f.list = list.New()
+	}
+	f.lock.Unlock()
+
+	if runList != nil {
+		for i := runList.Front(); i != nil; i = i.Next() {
+			if l, ok := i.Value.(Log); ok {
+				nowSplit := l.time.Format(f.splitTag)
+				if f.lastSplit != nowSplit || f.fp == nil {
+					f.lastSplit = nowSplit
+					var err error
+					f.lock.Lock()
+					if f.fp != nil {
+						_ = f.fp.Close()
+					}
+					f.fp, err = os.OpenFile(f.fileName+"."+nowSplit, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+					f.lock.Unlock()
+					if err != nil {
+						fmt.Println("failed to open log file " + f.fileName + "." + nowSplit + " " + err.Error())
+					}
+				}
+				logStr := l.time.Format("2006/01/02 15:04:05.000000") + " " + l.message+"\n"
+				f.lock.Lock()
+				_, err := f.fp.WriteString(logStr)
+				f.lock.Unlock()
+				if err != nil {
+					fmt.Println("failed to write log file " + f.fileName + "." + nowSplit + " " + err.Error())
+					fmt.Print(logStr)
+				}
+			}
+		}
+	}
+}
+
+func (f *File) Close() {
+	f.lock.Lock()
+	if f.fp != nil {
+		_ = f.fp.Close()
+		f.fp = nil
+	}
+	f.lock.Unlock()
+}
+
+var files = map[string]*File{}
+var filesLock = sync.RWMutex{}
+
 type Logger struct {
-	config          Config
-	level           LevelType
-	goLogger        *log.Logger
-	fp              *os.File
+	config   Config
+	level    LevelType
+	goLogger *log.Logger
+	//fp              *os.File
+	file            *File
 	writer          Writer
 	truncations     []string
 	sensitive       map[string]bool
@@ -200,18 +276,43 @@ func NewLogger(conf Config) *Logger {
 				logger.Error("unsupported logger writer "+writerName, "file", conf.File)
 			}
 		} else {
-			logFile := conf.File
 			if conf.SplitTag != "" {
-				// 使用切割的日志文件
-				logFile += "." + time.Now().Format(conf.SplitTag)
+				filesLock.RLock()
+				logger.file = files[conf.File+conf.SplitTag]
+				filesLock.RUnlock()
+				if logger.file == nil {
+					logger.file = &File{
+						fileName:  conf.File,
+						lastSplit: "",
+						splitTag:  conf.SplitTag,
+						fp:        nil,
+						list:      list.New(),
+						lock:      sync.Mutex{},
+					}
+					filesLock.Lock()
+					files[conf.File+conf.SplitTag] = logger.file
+					filesLock.Unlock()
+				}
+			}else{
+				fp, err := os.OpenFile(conf.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+				if err == nil {
+					logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
+				} else {
+					log.Println(err.Error())
+				}
 			}
-			fp, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-			if err == nil {
-				logger.fp = fp
-				logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
-			} else {
-				log.Println(err.Error())
-			}
+			//logFile := conf.File
+			//if conf.SplitTag != "" {
+			//	// 使用切割的日志文件
+			//	logFile += "." + time.Now().Format(conf.SplitTag)
+			//}
+			//fp, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+			//if err == nil {
+			//	logger.fp = fp
+			//	logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
+			//} else {
+			//	log.Println(err.Error())
+			//}
 		}
 	}
 	logger.config = conf
@@ -222,29 +323,29 @@ func (logger *Logger) SetLevel(level LevelType) {
 	logger.level = level
 }
 
-func (logger *Logger) Split(tag string) {
-	if tag == "" {
-		//tag = time.Now().Format("2006-01-02T15:04:05")
-	}
-
-	logger.goLogger = nil
-	err := logger.fp.Close()
-	if err != nil {
-		log.Println(err.Error())
-	}
-	err = os.Rename(logger.config.File, logger.config.File+"."+tag)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	fp, err := os.OpenFile(logger.config.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err == nil {
-		logger.fp = fp
-		logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
-	} else {
-		log.Println(err.Error())
-	}
-}
+//func (logger *Logger) Split(tag string) {
+//	if tag == "" {
+//		//tag = time.Now().Format("2006-01-02T15:04:05")
+//	}
+//
+//	logger.goLogger = nil
+//	err := logger.fp.Close()
+//	if err != nil {
+//		log.Println(err.Error())
+//	}
+//	err = os.Rename(logger.config.File, logger.config.File+"."+tag)
+//	if err != nil {
+//		log.Println(err.Error())
+//	}
+//
+//	fp, err := os.OpenFile(logger.config.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+//	if err == nil {
+//		logger.fp = fp
+//		logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
+//	} else {
+//		log.Println(err.Error())
+//	}
+//}
 
 func (logger *Logger) SetDesensitization(f func(v string) string) {
 	logger.desensitization = f
@@ -287,8 +388,8 @@ func flat(v reflect.Value, out reflect.Value) {
 	}
 }
 
-var prevDay string
-var changeDayLock sync.Mutex = sync.Mutex{}
+//var prevDay string
+//var changeDayLock sync.Mutex = sync.Mutex{}
 
 func (logger *Logger) Log(data interface{}) {
 
@@ -350,42 +451,44 @@ func (logger *Logger) Log(data interface{}) {
 				log.Print("writer not running")
 				log.Print(string(buf))
 			}
+		} else if logger.file != nil {
+			logger.file.Write(time.Now(), string(buf))
 		} else if logger.goLogger == nil {
 			log.Print(string(buf))
 		} else {
 			// 输出到文件
-			if logger.config.SplitTag != "" {
-				today := time.Now().Format(logger.config.SplitTag)
-				if prevDay == "" {
-					changeDayLock.Lock()
-					if prevDay == "" {
-						prevDay = today
-					}
-					changeDayLock.Unlock()
-				}
-				if today != prevDay {
-					logger.goLogger.Print("start changed log file to " + today + " from " + prevDay)
-					changeDayLock.Lock()
-					if today != prevDay {
-						prevDay = today
-
-						// 切换日志文件
-						fp, err2 := os.OpenFile(logger.config.File+"."+today, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-						if err2 == nil {
-							logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
-							if logger.fp != nil {
-								_ = logger.fp.Close()
-							}
-							logger.fp = fp
-							logger.goLogger.Print("succeed changed log file to " + today + " from " + prevDay)
-						} else {
-							logger.goLogger.Print("failed changed log file to " + today + " from " + prevDay)
-						}
-					}
-					changeDayLock.Unlock()
-					logger.goLogger.Print("stop changed log file to " + today + " from " + prevDay)
-				}
-			}
+			//if logger.config.SplitTag != "" {
+			//	today := time.Now().Format(logger.config.SplitTag)
+			//	if prevDay == "" {
+			//		changeDayLock.Lock()
+			//		if prevDay == "" {
+			//			prevDay = today
+			//		}
+			//		changeDayLock.Unlock()
+			//	}
+			//	if today != prevDay {
+			//		logger.goLogger.Print("start changed log file to " + today + " from " + prevDay)
+			//		changeDayLock.Lock()
+			//		if today != prevDay {
+			//			prevDay = today
+			//
+			//			// 切换日志文件
+			//			fp, err2 := os.OpenFile(logger.config.File+"."+today, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+			//			if err2 == nil {
+			//				logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
+			//				if logger.fp != nil {
+			//					_ = logger.fp.Close()
+			//				}
+			//				logger.fp = fp
+			//				logger.goLogger.Print("succeed changed log file to " + today + " from " + prevDay)
+			//			} else {
+			//				logger.goLogger.Print("failed changed log file to " + today + " from " + prevDay)
+			//			}
+			//		}
+			//		changeDayLock.Unlock()
+			//		logger.goLogger.Print("stop changed log file to " + today + " from " + prevDay)
+			//	}
+			//}
 			logger.goLogger.Print(string(buf))
 		}
 	}
