@@ -76,7 +76,7 @@ func (f *File) Run() {
 						fmt.Println("failed to open log file " + f.fileName + "." + nowSplit + " " + err.Error())
 					}
 				}
-				logStr := l.time.Format("2006/01/02 15:04:05.000000") + " " + l.message+"\n"
+				logStr := l.time.Format("2006/01/02 15:04:05.000000") + " " + l.message + "\n"
 				f.lock.Lock()
 				_, err := f.fp.WriteString(logStr)
 				f.lock.Unlock()
@@ -262,7 +262,7 @@ func NewLogger(conf Config) *Logger {
 		logger.level = INFO
 	}
 
-	if conf.File != "" {
+	if conf.File != "" && conf.File != "console" {
 		if strings.Contains(conf.File, "://") {
 			writerName := strings.SplitN(conf.File, "://", 2)[0]
 			m := writerMakers[writerName]
@@ -293,7 +293,7 @@ func NewLogger(conf Config) *Logger {
 					files[conf.File+conf.SplitTag] = logger.file
 					filesLock.Unlock()
 				}
-			}else{
+			} else {
 				fp, err := os.OpenFile(conf.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 				if err == nil {
 					logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)

@@ -27,7 +27,7 @@ func TestSplit(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		tm := time.Now().Format(splitTag)
 		if tm != prevTime {
-			lines, _ := u.ReadFile(logFile+"."+prevTime, 2048000)
+			lines, _ := u.ReadFile(logFile + "." + prevTime)
 			ok := true
 			for _, timeValue := range outs {
 				if !strings.Contains(lines, timeValue) {
@@ -46,12 +46,11 @@ func TestSplit(t *testing.T) {
 
 		fmt.Println(u.String(i) + "_" + tm)
 		logger.Info(u.String(i) + "_" + tm)
-		outs = append(outs, u.String(i) + "_" + tm)
+		outs = append(outs, u.String(i)+"_"+tm)
 
 		time.Sleep(100 * time.Millisecond)
 		time.Sleep(3 * time.Second)
 	}
-
 
 	_ = os.RemoveAll(logFile + "*")
 }
