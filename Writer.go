@@ -1,6 +1,7 @@
 package log
 
 import (
+	"sync"
 	"time"
 )
 
@@ -10,15 +11,35 @@ type Writer interface {
 }
 
 var writerRunning = false
+var writerLock = sync.RWMutex{}
 var writerStopChan = make(chan bool)
 var writers = make([]Writer, 0)
 
+func CheckStart() {
+	writerLock.RLock()
+	wr := writerRunning
+	writerLock.RUnlock()
+	if !wr {
+		Start()
+	}
+}
+
 func Start() {
+	writerLock.Lock()
+	defer writerLock.Unlock()
+	if writerRunning {
+		return
+	}
 	writerRunning = true
 	go writerRunner()
 }
 
 func Stop() {
+	writerLock.Lock()
+	defer writerLock.Unlock()
+	if !writerRunning {
+		return
+	}
 	writerRunning = false
 }
 
@@ -28,35 +49,45 @@ func Wait() {
 
 func writerRunner() {
 	for {
-		i := 0
+		tmpFiles := make([]*File, len(files))
 		filesLock.RLock()
-		runFiles := make([]*File, len(files))
+		i := 0
 		for _, f := range files {
-			runFiles[i] = f
+			tmpFiles[i] = f
 			i++
 		}
 		filesLock.RUnlock()
-		for _, f := range runFiles {
+		for _, f := range tmpFiles {
 			f.Run()
 		}
-		for _, w := range writers {
+
+		tmpWrites := make([]Writer, len(writers))
+		writerLock.RLock()
+		copy(tmpWrites, writers)
+		writerLock.RUnlock()
+
+		for _, w := range tmpWrites {
 			w.Run()
 		}
 
-		if !writerRunning {
-			time.Sleep(10 * time.Millisecond)
-			for _, f := range runFiles {
+		writerLock.RLock()
+		wr := writerRunning
+		writerLock.RUnlock()
+
+		if !wr {
+			time.Sleep(5 * time.Millisecond)
+			for _, f := range tmpFiles {
 				f.Run()
 				f.Close()
 			}
-			for _, w := range writers {
+			for _, w := range tmpWrites {
 				w.Run()
 			}
 			break
 		}
 
 		// 每10毫秒Run一次
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(5 * time.Millisecond)
 	}
 	writerStopChan <- true
 }

@@ -4,28 +4,35 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ssgo/log"
-	"github.com/ssgo/standard"
-	"github.com/ssgo/u"
 	log2 "log"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ssgo/log"
+	"github.com/ssgo/standard"
+	"github.com/ssgo/u"
 )
 
+// func TestStart(m *testing.T) {
+// 	log.Start()
+// }
 
 func TestLogInfoLevel(t *testing.T) {
 	logFile := "tmp_test_info_level.Log"
-	_ = os.Remove(logFile)
+	logFile1 := "tmp_test_info_level.Log." + time.Now().Format("20060102")
+	_ = os.Remove(logFile1)
 	logger := log.NewLogger(log.Config{
-		File: logFile,
+		File:     logFile,
+		SplitTag: "20060102",
 	})
 	logger.Debug("Test", "level", 1)
 	logger.Info("Test", "level", 2)
 	logger.Warning("Test", "level", 3)
 	logger.Error("Test", "level", 4)
-	lines, _ := u.ReadFileLines(logFile)
+	time.Sleep(10 * time.Millisecond)
+	lines, _ := u.ReadFileLines(logFile1)
 	if len(lines) != 4 || strings.Index(lines[0], "info") == -1 {
 		t.Error("info level test failed")
 	}
@@ -35,21 +42,24 @@ func TestLogInfoLevel(t *testing.T) {
 	if len(lines) != 4 || strings.Index(lines[2], "error") == -1 {
 		t.Error("error level test failed")
 	}
-	_ = os.Remove(logFile)
+	_ = os.Remove(logFile1)
 }
 
 func TestLogDebugLevel(t *testing.T) {
 	logFile := "tmp_test_debug_level.Log"
-	_ = os.Remove(logFile)
+	logFile1 := "tmp_test_debug_level.Log." + time.Now().Format("20060102")
+	_ = os.Remove(logFile1)
 	logger := log.NewLogger(log.Config{
-		File:  logFile,
-		Level: "debug",
+		File:     logFile,
+		SplitTag: "20060102",
+		Level:    "debug",
 	})
 	logger.Debug("Test", "level", 1)
 	logger.Info("Test", "level", 2)
 	logger.Warning("Test", "level", 3)
 	logger.Error("Test", "level", 4)
-	lines, _ := u.ReadFileLines(logFile)
+	time.Sleep(10 * time.Millisecond)
+	lines, _ := u.ReadFileLines(logFile1)
 	if len(lines) != 5 || strings.Index(lines[0], "debug") == -1 {
 		t.Error("info level test failed")
 	}
@@ -62,14 +72,16 @@ func TestLogDebugLevel(t *testing.T) {
 	if len(lines) != 5 || strings.Index(lines[3], "error") == -1 {
 		t.Error("error level test failed")
 	}
-	_ = os.Remove(logFile)
+	_ = os.Remove(logFile1)
 }
 
 func TestLogSensitive(t *testing.T) {
 	logFile := "tmp_test_sensitive.Log"
-	_ = os.Remove(logFile)
+	logFile1 := "tmp_test_sensitive.Log." + time.Now().Format("20060102")
+	_ = os.Remove(logFile1)
 	logger := log.NewLogger(log.Config{
 		File:           logFile,
+		SplitTag:       "20060102",
 		Sensitive:      "phone,password,name,token,accessToken",
 		RegexSensitive: "(^|[^\\d])(1\\d{10})([^\\d]|$),\\[(\\w+)\\]",
 		SensitiveRule:  "12:4*4,11:3*4,7:2*2,3:1*1,2:1*0",
@@ -89,24 +101,26 @@ func TestLogSensitive(t *testing.T) {
 	for i := 2; i < len(tests); i += 3 {
 		logger.Info("Sensitive Test "+u.String(tests[i-2]), tests[i-2], tests[i-1])
 	}
-	lines, _ := u.ReadFileLines(logFile)
-
+	time.Sleep(10 * time.Millisecond)
+	lines, _ := u.ReadFileLines(logFile1)
 	lineIndex := 0
 	for i := 2; i < len(tests); i += 3 {
 		if strings.Index(lines[lineIndex], u.String(tests[i])) == -1 {
 			t.Error("sensitive "+u.String(tests[i-2])+" test failed", lines[lineIndex], tests[i])
 		}
-		lineIndex ++
+		lineIndex++
 	}
 
-	_ = os.Remove(logFile)
+	_ = os.Remove(logFile1)
 }
 
 func TestLogSensitive2(t *testing.T) {
 	logFile := "tmp_test_sensitive2.Log"
-	_ = os.Remove(logFile)
+	logFile1 := "tmp_test_sensitive2.Log." + time.Now().Format("20060102")
+	_ = os.Remove(logFile1)
 	logger := log.NewLogger(log.Config{
 		File:           logFile,
+		SplitTag:       "20060102",
 		Sensitive:      "phone, password, name, token, accessToken",
 		RegexSensitive: "(^|[^\\d])(1\\d{10})([^\\d]|$), \\[(\\w+)\\]",
 		SensitiveRule:  "12:4*4, 11:3*4, 7:2*2, 3:1*1, 2:1*0",
@@ -116,13 +130,14 @@ func TestLogSensitive2(t *testing.T) {
 	m := map[string]interface{}{}
 	_ = json.Unmarshal([]byte(s), &m)
 	logger.Log(m)
-	lines, _ := u.ReadFileLines(logFile)
+	time.Sleep(10 * time.Millisecond)
+	lines, _ := u.ReadFileLines(logFile1)
 
 	if len(lines) != 2 || strings.Index(lines[0], "isBu*********nXXX") == -1 || strings.Index(lines[0], "isRe**********nXXX") == -1 {
 		t.Error("sensitive2 test failed", lines[0])
 	}
 
-	_ = os.Remove(logFile)
+	_ = os.Remove(logFile1)
 }
 
 func TestLogRequest(t *testing.T) {
@@ -133,6 +148,7 @@ func TestLogRequest(t *testing.T) {
 	startTime := time.Now()
 	time.Sleep(100 * time.Nanosecond)
 	logger.Request("server1", "appA", "10.3.22.178:32421", "59.32.113.241", "appB", "10.3.22.171:12334", "HJDWAdaukhASd7", "hdsaudsa", "AAClient", "3.0", "8suAHDgsyakHU", "udaHdhagy31Dd", "abc.com", "http", "1.1", 1, 0, "POST", "/users/{userId}/events", map[string]string{"Access-Token": "abcdefg"}, map[string]interface{}{"userId": 31123}, log.MakeUesdTime(startTime, time.Now()), 200, map[string]string{"XXX": "abc"}, 3401, u.String(map[string]interface{}{"events": nil}), map[string]interface{}{"specialTag": true})
+	time.Sleep(10 * time.Millisecond)
 	output := bufw.String()
 
 	//o := map[string]interface{}{}
@@ -157,7 +173,7 @@ func TestLogMultipleInheritance(t *testing.T) {
 		DBLog:    logger.MakeDBLog("type1", "mysql", "user:****@host:port/db", "", nil, 0),
 		ErrorLog: logger.MakeErrorLog("type2", "error"),
 	})
-
+	time.Sleep(10 * time.Millisecond)
 	lines, _ := u.ReadFileLines(logFile)
 	if len(lines) != 2 || strings.Index(lines[0], "type1") == -1 {
 		t.Error("multiple inheritance test failed")
@@ -173,7 +189,7 @@ func TestLogMap(t *testing.T) {
 	logger.Log(map[string]interface{}{
 		"logType": "type1",
 	})
-
+	time.Sleep(10 * time.Millisecond)
 	lines, _ := u.ReadFileLines(logFile)
 	if len(lines) != 2 || strings.Index(lines[0], "type1") == -1 {
 		t.Error("map test failed")
@@ -181,3 +197,7 @@ func TestLogMap(t *testing.T) {
 
 	_ = os.Remove(logFile)
 }
+
+// func TestStop(m *testing.T) {
+// 	log.Start()
+// }

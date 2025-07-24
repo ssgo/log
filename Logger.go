@@ -5,8 +5,6 @@ import (
 	"container/list"
 	"encoding/json"
 	"fmt"
-	"github.com/ssgo/standard"
-	"github.com/ssgo/u"
 	"log"
 	"net"
 	"os"
@@ -17,6 +15,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ssgo/standard"
+	"github.com/ssgo/u"
 )
 
 type LevelType int
@@ -73,7 +74,6 @@ func (f *File) Run() {
 					f.fp, err = os.OpenFile(f.fileName+"."+nowSplit, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 					f.lock.Unlock()
 					if err != nil {
-						fmt.Println("failed to open log file " + f.fileName + "." + nowSplit + " " + err.Error())
 					}
 				}
 				logStr := l.time.Format("2006/01/02 15:04:05.000000") + " " + l.message + "\n"
@@ -81,7 +81,6 @@ func (f *File) Run() {
 				_, err := f.fp.WriteString(logStr)
 				f.lock.Unlock()
 				if err != nil {
-					fmt.Println("failed to write log file " + f.fileName + "." + nowSplit + " " + err.Error())
 					fmt.Print(logStr)
 				}
 			}
@@ -252,13 +251,14 @@ func NewLogger(conf Config) *Logger {
 	}
 
 	logLevel := strings.ToLower(conf.Level)
-	if logLevel == "debug" {
+	switch logLevel {
+	case "debug":
 		logger.level = DEBUG
-	} else if logLevel == "warning" {
+	case "warning":
 		logger.level = WARNING
-	} else if logLevel == "error" {
+	case "error":
 		logger.level = ERROR
-	} else {
+	default:
 		logger.level = INFO
 	}
 
@@ -272,6 +272,7 @@ func NewLogger(conf Config) *Logger {
 					logger.writer = w
 					writers = append(writers, w)
 				}
+				CheckStart() // keep writer running
 			} else {
 				logger.Error("unsupported logger writer "+writerName, "file", conf.File)
 			}
@@ -281,6 +282,7 @@ func NewLogger(conf Config) *Logger {
 				logger.file = files[conf.File+conf.SplitTag]
 				filesLock.RUnlock()
 				if logger.file == nil {
+
 					logger.file = &File{
 						fileName:  conf.File,
 						lastSplit: "",
@@ -293,6 +295,7 @@ func NewLogger(conf Config) *Logger {
 					files[conf.File+conf.SplitTag] = logger.file
 					filesLock.Unlock()
 				}
+				CheckStart() // keep writer running
 			} else {
 				fp, err := os.OpenFile(conf.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 				if err == nil {
@@ -421,7 +424,6 @@ func (logger *Logger) Log(data interface{}) {
 		//t1 := time.Now()
 		buf, err = json.Marshal(data)
 		//t2 := time.Now()
-		//fmt.Println("\n\n === Marshal", float32(t2.UnixNano()-t1.UnixNano())/1000000)
 		//t1 = t2
 	}
 
@@ -511,7 +513,6 @@ func (logger *Logger) getCallStacks() []string {
 			for _, truncation := range logger.truncations {
 				pos := strings.Index(file, truncation)
 				if pos != -1 {
-					//fmt.Println(file, file[pos+len(truncation):])
 					file = file[pos+len(truncation):]
 				}
 			}

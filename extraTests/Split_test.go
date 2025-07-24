@@ -2,12 +2,13 @@ package log_test
 
 import (
 	"fmt"
-	"github.com/ssgo/log"
-	"github.com/ssgo/u"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ssgo/log"
+	"github.com/ssgo/u"
 )
 
 func TestSplit(t *testing.T) {
@@ -49,7 +50,7 @@ func TestSplit(t *testing.T) {
 		outs = append(outs, u.String(i)+"_"+tm)
 
 		time.Sleep(100 * time.Millisecond)
-		time.Sleep(3 * time.Second)
+		// time.Sleep(3 * time.Second)
 	}
 
 	_ = os.RemoveAll(logFile + "*")
