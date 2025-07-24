@@ -12,7 +12,7 @@ type Writer interface {
 
 var writerRunning = false
 var writerLock = sync.RWMutex{}
-var writerStopChan = make(chan bool)
+var writerStopChan chan bool
 var writers = make([]Writer, 0)
 
 func CheckStart() {
@@ -31,6 +31,7 @@ func Start() {
 		return
 	}
 	writerRunning = true
+	writerStopChan = make(chan bool)
 	go writerRunner()
 }
 
@@ -44,7 +45,10 @@ func Stop() {
 }
 
 func Wait() {
-	<-writerStopChan
+	if writerStopChan != nil {
+		<-writerStopChan
+		writerStopChan = nil
+	}
 }
 
 func writerRunner() {
@@ -89,5 +93,8 @@ func writerRunner() {
 		// 每10毫秒Run一次
 		time.Sleep(5 * time.Millisecond)
 	}
-	writerStopChan <- true
+
+	if writerStopChan != nil {
+		close(writerStopChan)
+	}
 }
