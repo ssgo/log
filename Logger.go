@@ -81,7 +81,7 @@ func (f *File) Run() {
 				_, err := f.fp.WriteString(logStr)
 				f.lock.Unlock()
 				if err != nil {
-					fmt.Print(logStr)
+					fmt.Println(Viewable(logStr))
 				}
 			}
 		}
@@ -219,7 +219,7 @@ func NewLogger(conf Config) *Logger {
 			if err == nil {
 				logger.regexSensitive = append(logger.regexSensitive, r)
 			} else {
-				log.Println(err.Error())
+				log.Println(u.BRed(err.Error()))
 			}
 		}
 		if len(logger.regexSensitive) == 0 {
@@ -301,7 +301,7 @@ func NewLogger(conf Config) *Logger {
 				if err == nil {
 					logger.goLogger = log.New(fp, "", log.Ldate|log.Lmicroseconds)
 				} else {
-					log.Println(err.Error())
+					log.Println(u.BRed(err.Error()))
 				}
 			}
 			//logFile := conf.File
@@ -456,7 +456,7 @@ func (logger *Logger) Log(data interface{}) {
 		} else if logger.file != nil {
 			logger.file.Write(time.Now(), string(buf))
 		} else if logger.goLogger == nil {
-			log.Print(string(buf))
+			fmt.Println(Viewable(string(buf)))
 		} else {
 			// 输出到文件
 			//if logger.config.SplitTag != "" {
