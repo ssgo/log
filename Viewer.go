@@ -128,12 +128,12 @@ func Viewable(line string) string {
 			outs = append(outs, " ", u.BGreen(u.String(r.ResponseCode)), " ", u.Green(u.String(r.UsedTime)))
 		}
 
+		outs = append(outs, " ", r.Host, " ", r.Method, " ", u.BCyan(r.Path), "  ", r.Scheme, " ", r.Proto)
 		outs = append(outs, "  ", r.ClientIp, u.Dim(" from"), u.Dim("("), u.Cyan(r.FromApp), u.Dim(":"), r.FromNode, u.Dim(")"), u.Dim(" to"), u.Dim("("), u.Cyan(r.App), u.Dim(":"), r.Node, u.Dim(":"), u.String(r.AuthLevel), u.Dim(":"), u.String(r.Priority), u.Dim(")"))
 		if r.RequestId != r.TraceId {
 			outs = append(outs, u.Dim("  requestId:"), r.RequestId)
 		}
 		outs = append(outs, "  ", u.Dim("user"), u.Dim(":"), u.Cyan(r.UserId), u.Dim(" sess"), u.Dim(":"), u.Cyan(r.SessionId), u.Dim(" dev"), u.Dim(":"), u.Cyan(r.DeviceId), u.Dim(" app"), u.Dim(":"), u.Cyan(r.ClientAppName), u.Dim(":"), u.Cyan(r.ClientAppVersion))
-		outs = append(outs, "  ", r.Scheme, " ", r.Proto, " ", r.Host, " ", r.Method, " ", u.Cyan(r.Path))
 		if r.RequestData != nil {
 			for k, v := range r.RequestData {
 				outs = append(outs, "  ", u.Cyan(k, u.AttrItalic), u.Dim(":"), u.String(v))

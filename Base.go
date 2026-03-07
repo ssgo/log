@@ -1,8 +1,9 @@
 package log
 
 import (
-	"github.com/ssgo/standard"
 	"time"
+
+	"github.com/ssgo/standard"
 )
 
 func (logger *Logger) Debug(debug string, extra ...interface{}) {
@@ -10,9 +11,9 @@ func (logger *Logger) Debug(debug string, extra ...interface{}) {
 		return
 	}
 	logger.Log(standard.DebugLog{
-		BaseLog:    logger.MakeBaseLog(standard.LogTypeDebug, extra...),
-		CallStacks: logger.getCallStacks(),
-		Debug:      debug,
+		BaseLog: logger.MakeBaseLog(standard.LogTypeDebug, extra...),
+		// CallStacks: logger.getCallStacks(),
+		Debug: debug,
 	})
 }
 
@@ -27,6 +28,9 @@ func (logger *Logger) Info(info string, extra ...interface{}) {
 }
 
 func (logger *Logger) Warning(warning string, extra ...interface{}) {
+	if !logger.CheckLevel(WARNING) {
+		return
+	}
 	if logger.CheckLevel(WARNING) {
 		logger.Log(logger.MakeWarningLog(standard.LogTypeWarning, warning, extra...))
 	}
@@ -38,13 +42,13 @@ func (logger *Logger) Error(error string, extra ...interface{}) {
 	}
 }
 
-func (logger *Logger) MakeDebugLog(logType, debug string, extra ...interface{}) standard.DebugLog {
-	return standard.DebugLog{
-		BaseLog:    logger.MakeBaseLog(logType, extra...),
-		CallStacks: logger.getCallStacks(),
-		Debug:      debug,
-	}
-}
+// func (logger *Logger) MakeDebugLog(logType, debug string, extra ...interface{}) standard.DebugLog {
+// 	return standard.DebugLog{
+// 		BaseLog:    logger.MakeBaseLog(logType, extra...),
+// 		CallStacks: logger.getCallStacks(),
+// 		Debug:      debug,
+// 	}
+// }
 
 func (logger *Logger) MakeInfoLog(logType, info string, extra ...interface{}) standard.InfoLog {
 	return standard.InfoLog{
@@ -53,18 +57,40 @@ func (logger *Logger) MakeInfoLog(logType, info string, extra ...interface{}) st
 	}
 }
 
+func getCallStacksByExtra(extra []interface{}) []string {
+	var callStacks []string
+	for i, v := range extra {
+		if v == "callStacks" && i%2 == 0 {
+			if vv, ok := extra[i+1].([]string); ok {
+				callStacks = vv
+				extra = append(extra[:i], extra[i+2:]...)
+				break
+			}
+		}
+	}
+	return callStacks
+}
+
 func (logger *Logger) MakeWarningLog(logType, warning string, extra ...interface{}) standard.WarningLog {
+	callStacks := getCallStacksByExtra(extra)
+	if callStacks == nil {
+		callStacks = logger.getCallStacks()
+	}
 	return standard.WarningLog{
 		BaseLog:    logger.MakeBaseLog(logType, extra...),
-		CallStacks: logger.getCallStacks(),
+		CallStacks: callStacks,
 		Warning:    warning,
 	}
 }
 
 func (logger *Logger) MakeErrorLog(logType, error string, extra ...interface{}) standard.ErrorLog {
+	callStacks := getCallStacksByExtra(extra)
+	if callStacks == nil {
+		callStacks = logger.getCallStacks()
+	}
 	return standard.ErrorLog{
 		BaseLog:    logger.MakeBaseLog(logType, extra...),
-		CallStacks: logger.getCallStacks(),
+		CallStacks: callStacks,
 		Error:      error,
 	}
 }
