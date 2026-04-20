@@ -394,18 +394,18 @@ func flat(v reflect.Value, out reflect.Value) {
 //var prevDay string
 //var changeDayLock sync.Mutex = sync.Mutex{}
 
-func (logger *Logger) Log(data interface{}) {
+func (logger *Logger) Log(data any) {
 
 	var buf []byte
 	var err error
 	if !logger.config.Fast {
 		// 快速模式不进行扁平化、脱敏等操作
 		v := reflect.ValueOf(data)
-		if v.Kind() == reflect.Ptr {
+		if v.Kind() == reflect.Pointer {
 			v = v.Elem()
 		}
 		if v.Kind() == reflect.Struct {
-			out := reflect.ValueOf(map[string]interface{}{})
+			out := reflect.ValueOf(map[string]any{})
 			flat(v, out)
 			v = out
 		}
@@ -429,7 +429,7 @@ func (logger *Logger) Log(data interface{}) {
 
 	if err != nil {
 		// 无法序列化的数据包装为 undefined
-		buf, err = json.Marshal(map[string]interface{}{
+		buf, err = json.Marshal(map[string]any{
 			//"logTime":   MakeLogTime(time.Now()),
 			"logType":   standard.LogTypeUndefined,
 			"traceId":   logger.traceId,
@@ -498,6 +498,7 @@ func (logger *Logger) Log(data interface{}) {
 
 func (logger *Logger) getCallStacks() []string {
 	callStacks := make([]string, 0)
+	inLogger := true
 	for i := 0; i < 50; i++ {
 		_, file, line, ok := runtime.Caller(i)
 		if !ok {
@@ -507,7 +508,11 @@ func (logger *Logger) getCallStacks() []string {
 			continue
 		}
 		if strings.Contains(file, "/ssgo/log") {
-			continue
+			if inLogger {
+				continue
+			}
+		} else {
+			inLogger = false
 		}
 		if logger.truncations != nil {
 			for _, truncation := range logger.truncations {
@@ -526,7 +531,7 @@ func (logger *Logger) isSensitiveField(s string) bool {
 	return logger.sensitive[fixField(s)]
 }
 
-func (logger *Logger) FixValue(v interface{}) {
+func (logger *Logger) FixValue(v any) {
 	if v1, ok := v.(reflect.Value); ok {
 		logger.fixLogData("", v1, 0)
 	} else {
@@ -539,11 +544,11 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 		return nil
 	}
 	isPtr := false
-	for v.Kind() == reflect.Ptr {
+	for v.Kind() == reflect.Pointer {
 		v = v.Elem()
 		isPtr = true
 	}
-	if v.Kind() == reflect.Ptr && v.IsNil() {
+	if v.Kind() == reflect.Pointer && v.IsNil() {
 		return nil
 	}
 	if !v.IsValid() {
@@ -558,7 +563,6 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 		}
 		t = v.Type()
 	}
-
 	if t.Kind() == reflect.Struct {
 		var newValue *reflect.Value = nil
 		if !v.CanSet() {
@@ -582,6 +586,15 @@ func (logger *Logger) fixLogData(k string, v reflect.Value, level int) *reflect.
 			newValue := logger.fixLogData(t.Field(i).Name, v.Field(i), level+1)
 			if newValue != nil { // && v.Field(i).CanSet()
 				changed = true
+				if newValue.Kind() == reflect.String && t.Field(i).Type.Kind() != reflect.String {
+					// 如果不是字符串被脱敏，整数填充0，其他类型为空
+					if strings.Contains(t.Field(i).Type.Name(), "int") {
+						tmpV := u.Int64(strings.ReplaceAll(u.String(newValue.Interface()), "*", "0"))
+						*newValue = reflect.ValueOf(tmpV).Convert(t.Field(i).Type)
+					} else {
+						*newValue = reflect.Zero(t.Field(i).Type)
+					}
+				}
 				v.Field(i).Set(*newValue)
 			}
 		}
